@@ -36,13 +36,13 @@ func Summarize(as []domain.Anomaly, metersAnalyzed int) domain.Summary {
 
 // summaryText renders the headline with U+00B7 and singular forms for 1.
 func summaryText(total, priority int) string {
-	found := fmt.Sprintf("%d anomalies detected", total)
+	found := fmt.Sprintf("%d anomalías detectadas", total)
 	if total == 1 {
-		found = "1 anomaly detected"
+		found = "1 anomalía detectada"
 	}
-	need := fmt.Sprintf("%d require priority attention", priority)
+	need := fmt.Sprintf("%d requieren atención prioritaria", priority)
 	if priority == 1 {
-		need = "1 requires priority attention"
+		need = "1 requiere atención prioritaria"
 	}
 	return found + " · " + need
 }

@@ -86,7 +86,7 @@ func TestAnalysisLifecycle(t *testing.T) {
 	done := t0.Add(time.Minute)
 	sum := domain.Summary{Total: 2, PriorityAttention: 1, MetersAnalyzed: 3, AvgConfidence: 0.9,
 		ByType:     map[domain.AnomalyType]int{domain.TypeReal: 1, domain.TypeDataQuality: 1},
-		BySeverity: map[domain.Severity]int{domain.SeverityHigh: 2}, Text: "2 anomalies detected · 1 requires priority attention"}
+		BySeverity: map[domain.Severity]int{domain.SeverityHigh: 2}, Text: "2 anomalías detectadas · 1 requiere atención prioritaria"}
 	as := []domain.Anomaly{anomaly("x1", "a1", "A-1", 1, domain.TypeReal, domain.SeverityHigh), anomaly("x2", "a1", "B-2", 2, domain.TypeDataQuality, domain.SeverityHigh)}
 	if err := s.Complete(ctx, "a1", done, sum, as); err != nil {
 		t.Fatal(err)

@@ -22,14 +22,14 @@ func TestSummarize(t *testing.T) {
 		{"demo shape", []domain.Anomaly{
 			an(domain.TypeReal, domain.SeverityHigh, 0.975), an(domain.TypeDataQuality, domain.SeverityHigh, 0.98),
 			an(domain.TypeExplainable, domain.SeverityMedium, 0.84), an(domain.TypeFalsePos, domain.SeverityLow, 0.86)},
-			4, 2, "4 anomalies detected · 2 require priority attention"},
-		{"none", nil, 0, 0, "0 anomalies detected · 0 require priority attention"},
-		{"one priority", []domain.Anomaly{an(domain.TypeReal, domain.SeverityHigh, 0.9)}, 1, 1, "1 anomaly detected · 1 requires priority attention"},
-		{"one without priority", []domain.Anomaly{an(domain.TypeExplainable, domain.SeverityHigh, 0.9)}, 1, 0, "1 anomaly detected · 0 require priority attention"},
+			4, 2, "4 anomalías detectadas · 2 requieren atención prioritaria"},
+		{"none", nil, 0, 0, "0 anomalías detectadas · 0 requieren atención prioritaria"},
+		{"one priority", []domain.Anomaly{an(domain.TypeReal, domain.SeverityHigh, 0.9)}, 1, 1, "1 anomalía detectada · 1 requiere atención prioritaria"},
+		{"one without priority", []domain.Anomaly{an(domain.TypeExplainable, domain.SeverityHigh, 0.9)}, 1, 0, "1 anomalía detectada · 0 requieren atención prioritaria"},
 		{"false positive counts in total only", []domain.Anomaly{an(domain.TypeFalsePos, domain.SeverityHigh, 0.9), an(domain.TypeReal, domain.SeverityMedium, 0.8)},
-			2, 0, "2 anomalies detected · 0 require priority attention"},
+			2, 0, "2 anomalías detectadas · 0 requieren atención prioritaria"},
 		{"high explainable is not priority", []domain.Anomaly{an(domain.TypeExplainable, domain.SeverityHigh, 0.9), an(domain.TypeDataQuality, domain.SeverityLow, 0.9)},
-			2, 0, "2 anomalies detected · 0 require priority attention"},
+			2, 0, "2 anomalías detectadas · 0 requieren atención prioritaria"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

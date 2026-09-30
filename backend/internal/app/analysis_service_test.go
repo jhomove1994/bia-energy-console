@@ -306,7 +306,7 @@ func TestResultsBecomeVisibleAtDoneWithExplanationsAndSummary(t *testing.T) {
 		t.Fatalf("status = %q, want open", as[0].Status)
 	}
 	s := final.Summary
-	if s == nil || s.Total != 2 || s.PriorityAttention != 1 || s.MetersAnalyzed != 7 || s.Text != "2 anomalies detected · 1 requires priority attention" {
+	if s == nil || s.Total != 2 || s.PriorityAttention != 1 || s.MetersAnalyzed != 7 || s.Text != "2 anomalías detectadas · 1 requiere atención prioritaria" {
 		t.Fatalf("summary = %+v", s)
 	}
 }

@@ -225,7 +225,7 @@ func TestAnalysisStatusEndpoints(t *testing.T) {
 	if a.ID != id || a.Status != "done" || a.Progress != 100 || a.Error == nil || *a.Error != "" || a.StartedAt == nil || a.FinishedAt == nil {
 		t.Fatalf("done payload = %+v", a)
 	}
-	if a.Summary == nil || a.Summary.Total != 4 || a.Summary.PriorityAttention != 2 || a.Summary.Text != "4 anomalies detected · 2 require priority attention" {
+	if a.Summary == nil || a.Summary.Total != 4 || a.Summary.PriorityAttention != 2 || a.Summary.Text != "4 anomalías detectadas · 2 requieren atención prioritaria" {
 		t.Fatalf("summary = %+v", a.Summary)
 	}
 	latest := f.get(t, "/api/ai/analysis/latest")
@@ -251,7 +251,7 @@ func TestAnomaliesOnDemoDataset(t *testing.T) {
 	id := f.runAnalysis(t)
 
 	got := decode[anomalyListResp](t, f.get(t, "/api/anomalies"))
-	if got.AnalysisID == nil || *got.AnalysisID != id || got.SummaryText == nil || *got.SummaryText != "4 anomalies detected · 2 require priority attention" {
+	if got.AnalysisID == nil || *got.AnalysisID != id || got.SummaryText == nil || *got.SummaryText != "4 anomalías detectadas · 2 requieren atención prioritaria" {
 		t.Fatalf("envelope = %+v", got)
 	}
 	if want := []string{"M-109", "M-112", "M-104", "M-106"}; !sameStrings(meterIDs(got.Items), want) {
@@ -370,7 +370,7 @@ func TestDashboardAfterAnalysis(t *testing.T) {
 		} `json:"last_analysis"`
 		Text *string `json:"summary_text"`
 	}](t, f.get(t, "/api/dashboard/summary"))
-	if d.Anomalies != 4 || d.High != 2 || d.Text == nil || *d.Text != "4 anomalies detected · 2 require priority attention" ||
+	if d.Anomalies != 4 || d.High != 2 || d.Text == nil || *d.Text != "4 anomalías detectadas · 2 requieren atención prioritaria" ||
 		d.Last == nil || d.Last.Status != "done" || d.Confidence == nil || *d.Confidence < 0.8 || *d.Confidence > 0.95 {
 		t.Fatalf("dashboard = %+v", d)
 	}

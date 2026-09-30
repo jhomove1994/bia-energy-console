@@ -39,8 +39,8 @@ func TestDashboardUsesLatestDoneAnalysis(t *testing.T) {
 		summary domain.Summary
 		wantAgg *float64
 	}{
-		{"with anomalies", domain.Summary{Total: 4, PriorityAttention: 2, AvgConfidence: 0.75, Text: "4 anomalies detected · 2 require priority attention"}, ptr(0.75)},
-		{"clean run has no confidence", domain.Summary{Total: 0, Text: "0 anomalies detected · 0 require priority attention"}, nil},
+		{"with anomalies", domain.Summary{Total: 4, PriorityAttention: 2, AvgConfidence: 0.75, Text: "4 anomalías detectadas · 2 requieren atención prioritaria"}, ptr(0.75)},
+		{"clean run has no confidence", domain.Summary{Total: 0, Text: "0 anomalías detectadas · 0 requieren atención prioritaria"}, nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -85,7 +85,7 @@ func TestAggregateConfidenceIsTheMean(t *testing.T) {
 	if d.AggregateConfidence == nil || *d.AggregateConfidence != 0.75 {
 		t.Fatalf("aggregate = %v, want 0.75", d.AggregateConfidence)
 	}
-	if d.AnomaliesCount != 4 || d.HighPriorityCount != 2 || d.SummaryText == nil || *d.SummaryText != "4 anomalies detected · 2 require priority attention" {
+	if d.AnomaliesCount != 4 || d.HighPriorityCount != 2 || d.SummaryText == nil || *d.SummaryText != "4 anomalías detectadas · 2 requieren atención prioritaria" {
 		t.Fatalf("dashboard = %+v", d)
 	}
 }
@@ -93,7 +93,7 @@ func TestAggregateConfidenceIsTheMean(t *testing.T) {
 func TestFailedNewerAnalysisDoesNotReplaceDoneFigures(t *testing.T) {
 	ctx := context.Background()
 	repo := newFakeAnalyses()
-	first := domain.Summary{Total: 4, PriorityAttention: 2, AvgConfidence: 0.75, Text: "4 anomalies detected · 2 require priority attention"}
+	first := domain.Summary{Total: 4, PriorityAttention: 2, AvgConfidence: 0.75, Text: "4 anomalías detectadas · 2 requieren atención prioritaria"}
 	_ = repo.Create(ctx, domain.Analysis{ID: "A", Status: domain.AnalysisPending})
 	_ = repo.Complete(ctx, "A", time.Now(), first, nil)
 	_ = repo.Create(ctx, domain.Analysis{ID: "B", Status: domain.AnalysisPending})
@@ -110,7 +110,7 @@ func TestFailedNewerAnalysisDoesNotReplaceDoneFigures(t *testing.T) {
 	}
 
 	// A newer completed analysis replaces it.
-	second := domain.Summary{Total: 1, PriorityAttention: 1, AvgConfidence: 0.9, Text: "1 anomaly detected · 1 requires priority attention"}
+	second := domain.Summary{Total: 1, PriorityAttention: 1, AvgConfidence: 0.9, Text: "1 anomalía detectada · 1 requiere atención prioritaria"}
 	_ = repo.Create(ctx, domain.Analysis{ID: "C", Status: domain.AnalysisPending})
 	_ = repo.Complete(ctx, "C", time.Now(), second, nil)
 	d, _ = svc.Summary(ctx)
