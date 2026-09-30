@@ -22,7 +22,7 @@ const realReason = `{{if .PatternOnly -}}
 El perfil horario de consumo de {{.Meter}} se desvió de su forma base durante {{.Hours}} h desde el {{.Start}} (correlación {{.PatternCorr}}). La energía diaria fue de {{.DailyObs}} kWh frente a {{.DailyBase}} kWh esperados.
 {{- else -}}
 El consumo promedió {{.Obs}} kWh/h frente a un baseline de {{.Base}} kWh/h ({{.Delta}}%) durante {{.Hours}} h desde el {{.Start}} (peor día: {{.DailyObs}} frente a {{.DailyBase}} kWh). La corriente varió {{.ADelta}}% y el factor de potencia pasó de {{.PFBase}} a {{.PFObs}}, lo que corrobora un cambio real de carga.
-{{- end}} Ningún evento explica este cambio{{if .HasEvent}}: el evento relacionado de tipo {{.EventType}} («{{.EventDesc}}») es solo contexto{{end}}.`
+{{- end}}{{if .ContextEvent}} Ningún evento explica este cambio: el evento relacionado de tipo {{.EventType}} («{{.EventDesc}}») es solo contexto.{{else}} Ningún evento conocido explica este cambio.{{end}}`
 
 const explainableReason = `El consumo promedió {{.Obs}} kWh/h frente a un baseline de {{.Base}} kWh/h ({{.Delta}}%) durante {{.Hours}} h desde el {{.Start}} y no ha vuelto al baseline. El evento relacionado de tipo {{.EventType}} («{{.EventDesc}}») explica el cambio, por lo que se trata de una variación esperada y no de una falla.`
 
@@ -107,7 +107,9 @@ type view struct {
 	RatioDetail             string
 	Gaps, BadStatus         string
 	HasEvent                bool
-	EventType, EventDesc    string
+	// ContextEvent is a related event of a known type; an unknown entry is not worth quoting.
+	ContextEvent         bool
+	EventType, EventDesc string
 }
 
 func num(x float64) string     { return domain.FormatNumber(x, 1) }
@@ -183,6 +185,7 @@ func newView(a domain.Anomaly) view {
 		v.HasEvent = true
 		v.EventType = domain.EventTypeName(a.RelatedEvent.Type)
 		v.EventDesc = a.RelatedEvent.Description
+		v.ContextEvent = domain.EventTypeName(a.RelatedEvent.Type) != domain.EventTypeName(domain.EventUnknown)
 	}
 	return v
 }

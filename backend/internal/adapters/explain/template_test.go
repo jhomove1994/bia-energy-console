@@ -135,17 +135,33 @@ func TestRealReasonCitesEvidenceAndStatesNoEventExplainsIt(t *testing.T) {
 			t.Errorf("reason lacks %q: %s", want, r)
 		}
 	}
-	if !strings.Contains(strings.ToLower(r), "ningún evento explica") {
-		t.Errorf("reason must state that no event explains the change: %s", r)
+	if l := strings.ToLower(r); !strings.Contains(l, "ningún evento conocido explica este cambio") {
+		t.Errorf("reason must state that no known event explains the change: %s", r)
 	}
 }
 
-func TestRealReasonKeepsAnUnrelatedEventAsContext(t *testing.T) {
+func TestRealReasonKeepsAnUnrelatedKnownEventAsContext(t *testing.T) {
 	a := anomalies()[domain.ActionInspectLoadIncrease]
-	a.RelatedEvent = &domain.Event{Type: domain.EventUnknown, Description: "Unclassified entry"}
+	a.RelatedEvent = &domain.Event{Type: domain.EventDataQuality, Description: "Sensor recalibrated"}
 	r := New().Reason(a)
-	if !strings.Contains(strings.ToLower(r), "ningún evento explica") || !strings.Contains(r, "Unclassified entry") {
-		t.Fatalf("reason = %s", r)
+	for _, want := range []string{"ningún evento explica este cambio", "Calidad de datos", "Sensor recalibrated", "solo contexto"} {
+		if !strings.Contains(strings.ToLower(r), strings.ToLower(want)) {
+			t.Errorf("reason lacks %q: %s", want, r)
+		}
+	}
+}
+
+func TestRealReasonDoesNotQuoteAnUnknownEvent(t *testing.T) {
+	a := anomalies()[domain.ActionInspectLoadIncrease]
+	a.RelatedEvent = &domain.Event{Type: domain.EventUnknown, Description: "No operational event reported"}
+	r := New().Reason(a)
+	if !strings.Contains(r, "Ningún evento conocido explica este cambio.") {
+		t.Errorf("reason must say no known event explains the change: %s", r)
+	}
+	for _, bad := range []string{"No operational event reported", "Desconocido", "UNKNOWN", "contexto"} {
+		if strings.Contains(r, bad) {
+			t.Errorf("reason must not mention an unknown event (%q): %s", bad, r)
+		}
 	}
 }
 
@@ -221,8 +237,8 @@ func TestTextsAreSpanishAndFreeOfEnglishFragments(t *testing.T) {
 
 func TestEventTypeIsShownWithItsSpanishName(t *testing.T) {
 	a := anomalies()[domain.ActionInspectLoadIncrease]
-	a.RelatedEvent = &domain.Event{Type: domain.EventUnknown, Description: "Unclassified entry"}
-	if r := New().Reason(a); !strings.Contains(r, "Desconocido") || strings.Contains(r, "UNKNOWN") {
+	a.RelatedEvent = &domain.Event{Type: domain.EventOperationalChange, Description: "Unclassified entry"}
+	if r := New().Reason(a); !strings.Contains(r, "Cambio operativo") || strings.Contains(r, "OPERATIONAL_CHANGE") {
 		t.Fatalf("reason = %s", r)
 	}
 }
