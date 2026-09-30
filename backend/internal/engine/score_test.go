@@ -2,6 +2,7 @@ package engine
 
 import (
 	"math"
+	"strings"
 	"testing"
 
 	"energy/internal/domain"
@@ -234,7 +235,7 @@ func TestScoreKeepsTheRelatedEventAsEvidenceAndContext(t *testing.T) {
 		t.Fatalf("RelatedEvent = %+v", a.RelatedEvent)
 	}
 	e := evidenceByMetric(a)["event"]
-	if e.EventID == nil || *e.EventID != 7 || e.Detail == "" {
+	if e.EventID == nil || *e.EventID != 7 || e.Detail != "Cambio operativo: new line" {
 		t.Fatalf("event evidence = %+v", e)
 	}
 	// Explained by a known event: clarity 1, so 0.5+0.2+0.15+0.033+0.05.
@@ -325,8 +326,8 @@ func TestScoreDataQualityIncident(t *testing.T) {
 	}
 	within(t, "voltage jumps", ev["voltage_jumps"].Observed, 6, 1e-9)
 	within(t, "pf jumps", ev["pf_jumps"].Observed, 1, 1e-9)
-	if ev["voltage_jumps"].Detail == "" || ev["electrical_ratio"].Detail == "" {
-		t.Fatalf("min/max details missing: %+v", a.Evidence)
+	if !strings.HasPrefix(ev["voltage_jumps"].Detail, "mín ") || !strings.Contains(ev["voltage_jumps"].Detail, " V, máx ") || !strings.HasPrefix(ev["electrical_ratio"].Detail, "mín ") {
+		t.Fatalf("min/max details missing or not Spanish: %+v", a.Evidence)
 	}
 	if _, ok := ev["gaps"]; ok {
 		t.Fatal("no gap signal, so no gaps evidence")
@@ -384,7 +385,7 @@ func TestScoreAddsPatternEvidenceWhenABreakIsAttached(t *testing.T) {
 		t.Fatal("missing hourly_pattern evidence")
 	}
 	within(t, "corr", e.Observed, 0.53, 1e-9)
-	if e.Detail != "corr 0.53, shape deviation 36.8%" {
+	if e.Detail != "correlación 0,53, desviación de forma 36,8%" {
 		t.Fatalf("detail = %q", e.Detail)
 	}
 }

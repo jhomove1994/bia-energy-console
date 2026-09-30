@@ -276,6 +276,14 @@ func item(metric, label string, base, obs float64, unit string) domain.Evidence 
 }
 
 // count builds an evidence item without a baseline.
+// withUnit appends a unit to a formatted number; an empty unit adds nothing.
+func withUnit(text, unit string) string {
+	if unit == "" {
+		return text
+	}
+	return text + " " + unit
+}
+
 func count(metric, label string, obs float64, unit, detail string) domain.Evidence {
 	return domain.Evidence{Metric: metric, Label: label, Observed: obs, Unit: unit, Detail: detail}
 }
@@ -294,7 +302,7 @@ func (w windowStats) evidence(c Classified) []domain.Evidence {
 	ev = append(ev, count("duration_hours", "Duration", float64(w.hours), "h", ""))
 	if p, ok := findSignal(c.Incident, KindPatternBreak); ok {
 		ev = append(ev, count("hourly_pattern", "Hourly pattern correlation", p.Corr, "corr",
-			fmt.Sprintf("corr %.2f, shape deviation %.1f%%", p.Corr, p.Shape*100)))
+			fmt.Sprintf("correlación %s, desviación de forma %s%%", domain.FormatNumber(p.Corr, 2), domain.FormatNumber(p.Shape*100, 1))))
 	}
 	return appendEvent(ev, c)
 }
@@ -320,7 +328,7 @@ func appendEvent(ev []domain.Evidence, c Classified) []domain.Evidence {
 	}
 	e := c.Event.Event
 	id := e.ID
-	it := count("event", "Related event", c.Event.Distance.Hours(), "h", fmt.Sprintf("%s: %s", e.Type, e.Description))
+	it := count("event", "Related event", c.Event.Distance.Hours(), "h", fmt.Sprintf("%s: %s", domain.EventTypeName(e.Type), e.Description))
 	it.EventID = &id
 	return append(ev, it)
 }
@@ -418,7 +426,7 @@ func (q dqStats) evidence(c Classified) []domain.Evidence {
 		}
 		detail := ""
 		if lo, hi, ok := minMax(q.series, pick); ok {
-			detail = fmt.Sprintf("min %.2f %s, max %.2f %s", lo, unit, hi, unit)
+			detail = "mín " + withUnit(domain.FormatNumber(lo, 2), unit) + ", máx " + withUnit(domain.FormatNumber(hi, 2), unit)
 		}
 		ev = append(ev, count(metric, map[string]string{
 			metricVoltage: "Voltage jumps",
@@ -435,7 +443,7 @@ func (q dqStats) evidence(c Classified) []domain.Evidence {
 		detail := ""
 		obs := 0.0
 		if lo, hi, ok := minMax(q.series, pick); ok {
-			detail = fmt.Sprintf("min %.2f, max %.2f", lo, hi)
+			detail = "mín " + domain.FormatNumber(lo, 2) + ", máx " + domain.FormatNumber(hi, 2)
 			var rs []float64
 			for _, r := range q.series {
 				if v, ok := ElectricalRatio(r); ok {

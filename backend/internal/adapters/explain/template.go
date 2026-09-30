@@ -11,8 +11,6 @@ import (
 	"energy/internal/domain"
 )
 
-const timeLayout = "2006-01-02 15:04 UTC"
-
 // Template implements app.Explainer with text/template.
 type Template struct {
 	reasons map[domain.AnomalyType]*template.Template
@@ -21,28 +19,28 @@ type Template struct {
 }
 
 const realReason = `{{if .PatternOnly -}}
-The hourly consumption profile of {{.Meter}} broke from its baseline shape for {{.Hours}} h from {{.Start}} (correlation {{.PatternCorr}}). Daily energy was {{.DailyObs}} kWh against {{.DailyBase}} kWh expected.
+El perfil horario de consumo de {{.Meter}} se desvió de su forma base durante {{.Hours}} h desde el {{.Start}} (correlación {{.PatternCorr}}). La energía diaria fue de {{.DailyObs}} kWh frente a {{.DailyBase}} kWh esperados.
 {{- else -}}
-Consumption averaged {{.Obs}} kWh/h against a baseline of {{.Base}} kWh/h ({{.Delta}}%) for {{.Hours}} h from {{.Start}} (worst day {{.DailyObs}} vs {{.DailyBase}} kWh). Current changed {{.ADelta}}%, and power factor moved from {{.PFBase}} to {{.PFObs}}, which corroborates a real load change.
-{{- end}} No event explains this change{{if .HasEvent}}: the related {{.EventType}} event ('{{.EventDesc}}') is context only{{end}}.`
+El consumo promedió {{.Obs}} kWh/h frente a un baseline de {{.Base}} kWh/h ({{.Delta}}%) durante {{.Hours}} h desde el {{.Start}} (peor día: {{.DailyObs}} frente a {{.DailyBase}} kWh). La corriente varió {{.ADelta}}% y el factor de potencia pasó de {{.PFBase}} a {{.PFObs}}, lo que corrobora un cambio real de carga.
+{{- end}} Ningún evento explica este cambio{{if .HasEvent}}: el evento relacionado de tipo {{.EventType}} («{{.EventDesc}}») es solo contexto{{end}}.`
 
-const explainableReason = `Consumption averaged {{.Obs}} kWh/h against a baseline of {{.Base}} kWh/h ({{.Delta}}%) for {{.Hours}} h from {{.Start}} and has not returned to the baseline. The related {{.EventType}} event ('{{.EventDesc}}') explains the change, so it is an expected shift rather than a fault.`
+const explainableReason = `El consumo promedió {{.Obs}} kWh/h frente a un baseline de {{.Base}} kWh/h ({{.Delta}}%) durante {{.Hours}} h desde el {{.Start}} y no ha vuelto al baseline. El evento relacionado de tipo {{.EventType}} («{{.EventDesc}}») explica el cambio, por lo que se trata de una variación esperada y no de una falla.`
 
-const falsePositiveReason = `Consumption averaged {{.Obs}} kWh/h against a baseline of {{.Base}} kWh/h ({{.Delta}}%) for {{.Hours}} h from {{.Start}}, matching the {{.EventType}} event ('{{.EventDesc}}'). Consumption returned to the baseline at {{.Recovery}}, so it is not a real anomaly.`
+const falsePositiveReason = `El consumo promedió {{.Obs}} kWh/h frente a un baseline de {{.Base}} kWh/h ({{.Delta}}%) durante {{.Hours}} h desde el {{.Start}}, en coincidencia con el evento de tipo {{.EventType}} («{{.EventDesc}}»). El consumo volvió al baseline el {{.Recovery}}, por lo que no es una anomalía real.`
 
-const dataQualityReason = `The electrical readings of {{.Meter}} were inconsistent for {{.Hours}} h from {{.Start}}: {{.VJumps}} voltage, {{.AJumps}} current and {{.PFJumps}} power factor jumps{{if .RatioDetail}}, and an unstable electrical ratio ({{.RatioDetail}}){{end}}{{if .Gaps}}, {{.Gaps}} missing readings{{end}}{{if .BadStatus}}, {{.BadStatus}} readings with a non-OK status{{end}}. This points to a metering or telemetry fault, not a change in load.{{if .HasEvent}} A related {{.EventType}} event was recorded.{{end}}`
+const dataQualityReason = `Las lecturas eléctricas de {{.Meter}} fueron inconsistentes durante {{.Hours}} h desde el {{.Start}}: {{.VJumps}} saltos de voltaje, {{.AJumps}} de corriente y {{.PFJumps}} de factor de potencia{{if .RatioDetail}}, y una relación eléctrica inestable ({{.RatioDetail}}){{end}}{{if .Gaps}}, {{.Gaps}} lecturas faltantes{{end}}{{if .BadStatus}}, {{.BadStatus}} lecturas con estado distinto de OK{{end}}. Esto apunta a una falla de medición o telemetría, no a un cambio de carga.{{if .HasEvent}} Se registró un evento relacionado de tipo {{.EventType}}.{{end}}`
 
 var actionTexts = map[domain.ActionCode]string{
-	domain.ActionInspectLoadIncrease: `Dispatch an on-site inspection of {{.Meter}} within 24 h. Check for new, faulty or out-of-schedule loads (current {{.ABase}} to {{.AObs}} A, power factor {{.PFBase}} to {{.PFObs}}) and confirm with the site operator.`,
-	domain.ActionCheckSupplyLoss:     `Verify supply continuity and the meter connection for {{.Meter}}. Check for tripped breakers or stopped equipment.`,
-	domain.ActionReviewTransient:     `Review load activity on {{.Meter}} during {{.Window}}. Escalate if it recurs.`,
-	domain.ActionReviewSchedule:      `Review the operating schedule of {{.Meter}} for {{.Window}}, where the hourly profile broke from its usual shape. Escalate if it persists.`,
-	domain.ActionOpenDQTicket:        `Open a metering data-quality ticket for {{.Meter}}. Inspect CT/PT wiring and telemetry, and exclude readings from {{.Window}} from billing and KPIs until validated.`,
-	domain.ActionUpdateBaseline:      `Confirm with operations that '{{.EventDesc}}' is permanent and rebaseline {{.Meter}}. No field action needed.`,
-	domain.ActionAcknowledgeExpected: `No action required. The deviation matches '{{.EventDesc}}' and consumption recovered at {{.Recovery}}.`,
+	domain.ActionInspectLoadIncrease: `Enviar una inspección en sitio a {{.Meter}} en un plazo de 24 h. Verificar cargas nuevas, defectuosas o fuera de horario (corriente de {{.ABase}} a {{.AObs}} A, factor de potencia de {{.PFBase}} a {{.PFObs}}) y confirmar con el operador del sitio.`,
+	domain.ActionCheckSupplyLoss:     `Verificar la continuidad del suministro y la conexión del medidor de {{.Meter}}. Revisar si hay interruptores disparados o equipos detenidos.`,
+	domain.ActionReviewTransient:     `Revisar la actividad de carga de {{.Meter}} en el periodo {{.Window}}. Escalar si se repite.`,
+	domain.ActionReviewSchedule:      `Revisar el horario de operación de {{.Meter}} en el periodo {{.Window}}, en el que el perfil horario se desvió de su forma habitual. Escalar si persiste.`,
+	domain.ActionOpenDQTicket:        `Abrir un ticket de calidad de datos de medición para {{.Meter}}. Inspeccionar el cableado CT/PT y la telemetría, y excluir de la facturación y de los KPI las lecturas {{.Window}} hasta su validación.`,
+	domain.ActionUpdateBaseline:      `Confirmar con operaciones que «{{.EventDesc}}» es permanente y recalcular el baseline de {{.Meter}}. No se requiere acción en campo.`,
+	domain.ActionAcknowledgeExpected: `No se requiere acción. La desviación coincide con «{{.EventDesc}}» y el consumo se recuperó el {{.Recovery}}.`,
 }
 
-const genericAction = `Review this finding on {{.Meter}} for {{.Window}}.`
+const genericAction = `Revisar este hallazgo de {{.Meter}} en el periodo {{.Window}}.`
 
 // New parses every template once. Templates are constants, so a parse error is
 // a programming error.
@@ -88,7 +86,7 @@ func render(tpl *template.Template, v view) string {
 	if err := tpl.Execute(&sb, v); err != nil {
 		// The view is a struct of strings, so execution cannot fail; fall back
 		// to a plain text rather than an empty explanation.
-		return fmt.Sprintf("Review the finding on %s.", v.Meter)
+		return fmt.Sprintf("Revisar el hallazgo de %s.", v.Meter)
 	}
 	return strings.TrimSpace(sb.String())
 }
@@ -112,11 +110,11 @@ type view struct {
 	EventType, EventDesc    string
 }
 
-func num(x float64) string     { return fmt.Sprintf("%.1f", x) }
-func ratio(x float64) string   { return fmt.Sprintf("%.2f", x) }
-func signed(x float64) string  { return fmt.Sprintf("%+.1f", x) }
-func whole(x float64) string   { return fmt.Sprintf("%.0f", x) }
-func stamp(t time.Time) string { return t.UTC().Format(timeLayout) }
+func num(x float64) string     { return domain.FormatNumber(x, 1) }
+func ratio(x float64) string   { return domain.FormatNumber(x, 2) }
+func signed(x float64) string  { return domain.FormatSigned(x, 1) }
+func whole(x float64) string   { return domain.FormatNumber(x, 0) }
+func stamp(t time.Time) string { return domain.FormatStamp(t) }
 
 func newView(a domain.Anomaly) view {
 	byMetric := map[string]domain.Evidence{}
@@ -126,7 +124,7 @@ func newView(a domain.Anomaly) view {
 	v := view{
 		Meter:       a.MeterID,
 		Start:       stamp(a.WindowStart),
-		Window:      stamp(a.WindowStart) + " to " + stamp(a.WindowEnd),
+		Window:      "del " + stamp(a.WindowStart) + " al " + stamp(a.WindowEnd),
 		Recovery:    stamp(a.WindowEnd.Add(time.Hour)),
 		Hours:       whole(float64(int(a.WindowEnd.Sub(a.WindowStart)/time.Hour) + 1)),
 		PatternOnly: a.Kind == domain.KindPatternChange,
@@ -183,7 +181,7 @@ func newView(a domain.Anomaly) view {
 	}
 	if a.RelatedEvent != nil {
 		v.HasEvent = true
-		v.EventType = string(a.RelatedEvent.Type)
+		v.EventType = domain.EventTypeName(a.RelatedEvent.Type)
 		v.EventDesc = a.RelatedEvent.Description
 	}
 	return v

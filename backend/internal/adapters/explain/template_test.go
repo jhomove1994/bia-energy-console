@@ -49,10 +49,10 @@ func anomalies() map[domain.ActionCode]domain.Anomaly {
 
 	dq := base(domain.TypeDataQuality, domain.KindDataInconsistency, domain.ActionOpenDQTicket)
 	dq.Evidence = []domain.Evidence{
-		{Metric: "voltage_jumps", Observed: 6, Unit: "count", Detail: "min 200.00 V, max 251.00 V"},
+		{Metric: "voltage_jumps", Observed: 6, Unit: "count", Detail: "mín 200,00 V, máx 251,00 V"},
 		{Metric: "current_jumps", Observed: 5, Unit: "count"},
 		{Metric: "pf_jumps", Observed: 3, Unit: "count"},
-		{Metric: "electrical_ratio", Baseline: f(1.05), Observed: 1.2, Unit: "", Detail: "min 0.58, max 4.22"},
+		{Metric: "electrical_ratio", Baseline: f(1.05), Observed: 1.2, Unit: "", Detail: "mín 0,58, máx 4,22"},
 		{Metric: "duration_hours", Observed: 48, Unit: "h"},
 	}
 	m[domain.ActionOpenDQTicket] = dq
@@ -130,12 +130,12 @@ func TestReasonsAreNonEmptyAndDifferByType(t *testing.T) {
 func TestRealReasonCitesEvidenceAndStatesNoEventExplainsIt(t *testing.T) {
 	a := anomalies()[domain.ActionInspectLoadIncrease]
 	r := New().Reason(a)
-	for _, want := range []string{"42.0", "20.0", "+109.4%", "58 h", "2026-09-12 14:00 UTC"} {
+	for _, want := range []string{"42,0", "20,0", "+109,4%", "58 h", "12 sept 2026, 14:00 UTC", "1.005,5", "480,2"} {
 		if !strings.Contains(r, want) {
 			t.Errorf("reason lacks %q: %s", want, r)
 		}
 	}
-	if !strings.Contains(strings.ToLower(r), "no event explains") {
+	if !strings.Contains(strings.ToLower(r), "ningún evento explica") {
 		t.Errorf("reason must state that no event explains the change: %s", r)
 	}
 }
@@ -144,7 +144,7 @@ func TestRealReasonKeepsAnUnrelatedEventAsContext(t *testing.T) {
 	a := anomalies()[domain.ActionInspectLoadIncrease]
 	a.RelatedEvent = &domain.Event{Type: domain.EventUnknown, Description: "Unclassified entry"}
 	r := New().Reason(a)
-	if !strings.Contains(strings.ToLower(r), "no event explains") || !strings.Contains(r, "Unclassified entry") {
+	if !strings.Contains(strings.ToLower(r), "ningún evento explica") || !strings.Contains(r, "Unclassified entry") {
 		t.Fatalf("reason = %s", r)
 	}
 }
@@ -152,17 +152,17 @@ func TestRealReasonKeepsAnUnrelatedEventAsContext(t *testing.T) {
 func TestReasonsQuoteTheEventAndTheRecovery(t *testing.T) {
 	x := New()
 	fp := x.Reason(anomalies()[domain.ActionAcknowledgeExpected])
-	for _, want := range []string{"Planned maintenance window", "2026-09-15 00:00 UTC"} {
+	for _, want := range []string{"Planned maintenance window", "Parada programada", "15 sept 2026, 00:00 UTC"} {
 		if !strings.Contains(fp, want) {
 			t.Errorf("false positive reason lacks %q: %s", want, fp)
 		}
 	}
 	ex := x.Reason(anomalies()[domain.ActionUpdateBaseline])
-	if !strings.Contains(ex, "New production line") {
+	if !strings.Contains(ex, "New production line") || !strings.Contains(ex, "Cambio operativo") {
 		t.Errorf("explainable reason lacks the event: %s", ex)
 	}
 	dq := x.Reason(anomalies()[domain.ActionOpenDQTicket])
-	for _, want := range []string{"6 voltage", "5 current", "3 power factor", "min 0.58, max 4.22"} {
+	for _, want := range []string{"6 saltos de voltaje", "5 de corriente", "3 de factor de potencia", "mín 0,58, máx 4,22"} {
 		if !strings.Contains(dq, want) {
 			t.Errorf("data quality reason lacks %q: %s", want, dq)
 		}
@@ -172,7 +172,7 @@ func TestReasonsQuoteTheEventAndTheRecovery(t *testing.T) {
 func TestActionsQuoteEventsAndElectricalValues(t *testing.T) {
 	x := New()
 	up := x.Action(anomalies()[domain.ActionInspectLoadIncrease])
-	for _, want := range []string{"X-1", "30.1", "63.2", "0.9", "0.7"} {
+	for _, want := range []string{"X-1", "30,1", "63,2", "0,90", "0,70", "24 h"} {
 		if !strings.Contains(up, want) {
 			t.Errorf("inspect action lacks %q: %s", want, up)
 		}
@@ -201,6 +201,32 @@ func TestUnknownActionCodeStillRendersText(t *testing.T) {
 	}
 }
 
+func TestTextsAreSpanishAndFreeOfEnglishFragments(t *testing.T) {
+	x := New()
+	english := []string{" the ", "Consumption", "baseline of", "Review ", "Open a", "Dispatch", "No action", " against ", " for ", "explains the"}
+	for _, a := range anomalyList() {
+		for _, out := range []string{x.Reason(a), x.Action(a)} {
+			for _, bad := range english {
+				if strings.Contains(out, bad) {
+					t.Errorf("%s text still has English %q: %s", a.Type, bad, out)
+				}
+			}
+		}
+	}
+	generic := x.Action(domain.Anomaly{MeterID: "X-1", Action: "SOMETHING_NEW"})
+	if !strings.Contains(generic, "Revisar") {
+		t.Errorf("generic action must be Spanish: %s", generic)
+	}
+}
+
+func TestEventTypeIsShownWithItsSpanishName(t *testing.T) {
+	a := anomalies()[domain.ActionInspectLoadIncrease]
+	a.RelatedEvent = &domain.Event{Type: domain.EventUnknown, Description: "Unclassified entry"}
+	if r := New().Reason(a); !strings.Contains(r, "Desconocido") || strings.Contains(r, "UNKNOWN") {
+		t.Fatalf("reason = %s", r)
+	}
+}
+
 func TestPowerFactorRendersWithTwoDecimals(t *testing.T) {
 	a := anomalies()[domain.ActionInspectLoadIncrease]
 	for i, e := range a.Evidence {
@@ -210,14 +236,14 @@ func TestPowerFactorRendersWithTwoDecimals(t *testing.T) {
 	}
 	x := New()
 	for name, got := range map[string]string{"reason": x.Reason(a), "action": x.Action(a)} {
-		for _, want := range []string{"0.94", "0.74"} {
+		for _, want := range []string{"0,94", "0,74"} {
 			if !strings.Contains(got, want) {
 				t.Errorf("%s lacks %q: %s", name, want, got)
 			}
 		}
 	}
 	// Other electrical values keep one decimal.
-	if r := x.Reason(a); !strings.Contains(r, "42.0 kWh/h") {
+	if r := x.Reason(a); !strings.Contains(r, "42,0 kWh/h") {
 		t.Errorf("consumption must keep one decimal: %s", r)
 	}
 }
