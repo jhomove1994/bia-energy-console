@@ -4,19 +4,20 @@ context: |
   Greenfield repo. Inputs in docs/: brief PDF, events.csv, readings.csv.
   Stack: undetermined - to be decided in proposal/design.
   Artifact language: English.
-strict_tdd: false
+strict_tdd: true
 strict_tdd_note: >
-  Desired once a stack and test runner exist (global config enables Strict TDD).
-  Currently false because zero projects were discovered and no workspace-level
-  test command exists. Re-run sdd-init after the stack is chosen.
-projects: []
+  Enabled after slice 1 created backend/go.mod and the first Go tests.
+  Runner: go test ./... -count=1 (cwd backend, summary output only).
+projects:
+  - {name: backend, path: backend, language: go, version: "1.23"}
 testing:
-  runner: none
-  layers: {unit: false, integration: false, e2e: false}
+  runner: go test ./... -count=1
+  runner_cwd: backend
+  layers: {unit: true, integration: true, e2e: false}
   coverage: false
-  linter: none
-  type_checker: none
-  formatter: none
+  linter: go vet ./...
+  type_checker: go build ./...
+  formatter: gofmt -l .
 rules:
   proposal: {}
   spec: {}
