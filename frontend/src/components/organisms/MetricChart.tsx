@@ -1,6 +1,7 @@
 import { CartesianGrid, ComposedChart, Line, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import {
   deltaPct,
+  formatYTick,
   summarizeSeries,
   type ChartPoint,
   type MetricConfig,
@@ -137,7 +138,8 @@ export function MetricChart({ metric, series, areas = [], lines = [], domain }: 
               />
               <YAxis
                 domain={metric.key === 'kwh' ? [0, 'auto'] : ['auto', 'auto']}
-                tickFormatter={(v: number) => formatNumber(v, metric.key === 'kwh' ? 0 : metric.decimals)}
+                tickFormatter={(v: number) => formatYTick(metric, v)}
+                allowDecimals={!metric.integerTicks}
                 tick={{ fontSize: 11, fill: chartTheme.axis }}
                 tickLine={false}
                 axisLine={false}

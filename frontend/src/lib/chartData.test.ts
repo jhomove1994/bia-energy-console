@@ -7,6 +7,7 @@ import {
   latestDayTotals,
   summarizeSeries,
   toChartSeries,
+  formatYTick,
   toReferenceAreas,
   toReferenceLines,
   zoomRange,
@@ -167,5 +168,30 @@ describe('latestDayTotals', () => {
 
   it('is null for fewer than 24 readings', () => {
     expect(latestDayTotals(day(1).slice(0, 23))).toBeNull()
+  })
+})
+
+describe('METRICS axis precision', () => {
+  const axis = (key: MetricKey) => metric(key).axis
+
+  it('gives each metric the precision its values need on the y axis', () => {
+    expect(axis('kwh')).toEqual({ min: 0, max: 1 })
+    expect(axis('voltage')).toEqual({ min: 0, max: 1 })
+    expect(axis('current')).toEqual({ min: 0, max: 0 })
+    expect(axis('pf')).toEqual({ min: 2, max: 2 })
+  })
+
+  it('formats y-axis ticks with that precision', () => {
+    expect(formatYTick(metric('current'), 525)).toBe('525')
+    expect(formatYTick(metric('current'), 524.6)).toBe('525')
+    expect(formatYTick(metric('pf'), 0.9)).toBe('0.90')
+    expect(formatYTick(metric('voltage'), 230)).toBe('230')
+    expect(formatYTick(metric('voltage'), 229.5)).toBe('229.5')
+    expect(formatYTick(metric('kwh'), 90)).toBe('90')
+    expect(formatYTick(metric('kwh'), 0.5)).toBe('0.5')
+  })
+
+  it('asks the chart for whole-number ticks only for current', () => {
+    expect(METRICS.filter((m) => m.integerTicks).map((m) => m.key)).toEqual(['current'])
   })
 })

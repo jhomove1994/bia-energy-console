@@ -54,3 +54,8 @@ export function formatWindow(startIso: string, endIso: string): string {
   if (dateOf(start) === dateOf(end)) return `${dateOf(start)}, ${timeOf(start)}–${timeOf(end)} UTC`
   return `${formatDateTime(startIso)} – ${formatDateTime(endIso)}`
 }
+
+/** Axis tick: at least `minDecimals`, at most `maxDecimals` fraction digits. */
+export function formatAxisNumber(value: number, minDecimals: number, maxDecimals: number): string {
+  return new Intl.NumberFormat('en-US', { minimumFractionDigits: minDecimals, maximumFractionDigits: maxDecimals }).format(value)
+}

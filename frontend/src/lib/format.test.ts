@@ -1,4 +1,4 @@
-import { formatAxisTick, formatNumber, formatConfidence, formatDate, formatDateTime, formatKwh, formatSignedPercent, formatWindow } from './format'
+import { formatAxisTick, formatNumber, formatConfidence, formatDate, formatDateTime, formatAxisNumber, formatKwh, formatSignedPercent, formatWindow } from './format'
 
 describe('formatKwh', () => {
   it('groups thousands and keeps one decimal', () => {
@@ -72,5 +72,24 @@ describe('formatWindow', () => {
 
   it('uses a single time for a one-reading window', () => {
     expect(formatWindow('2026-09-12T14:00:00Z', '2026-09-12T14:00:00Z')).toBe('12 Sep 2026, 14:00 UTC')
+  })
+})
+
+describe('formatAxisNumber', () => {
+  it('rounds to whole numbers when no decimals are allowed', () => {
+    expect(formatAxisNumber(525, 0, 0)).toBe('525')
+    expect(formatAxisNumber(524.6, 0, 0)).toBe('525')
+    expect(formatAxisNumber(1525, 0, 0)).toBe('1,525')
+  })
+
+  it('drops a trailing decimal that adds nothing when decimals are optional', () => {
+    expect(formatAxisNumber(230, 0, 1)).toBe('230')
+    expect(formatAxisNumber(229.5, 0, 1)).toBe('229.5')
+    expect(formatAxisNumber(229.54, 0, 1)).toBe('229.5')
+  })
+
+  it('keeps a fixed number of decimals when the minimum says so', () => {
+    expect(formatAxisNumber(0.9, 2, 2)).toBe('0.90')
+    expect(formatAxisNumber(1, 2, 2)).toBe('1.00')
   })
 })

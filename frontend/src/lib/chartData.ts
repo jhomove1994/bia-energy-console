@@ -1,4 +1,5 @@
 import type { MeterEvent, ReadingPoint } from '../api/types'
+import { formatAxisNumber } from './format'
 import { severityToken, type Severity, type SeverityToken } from './status'
 
 export type MetricKey = 'kwh' | 'voltage' | 'current' | 'pf'
@@ -9,16 +10,23 @@ export interface MetricConfig {
   unit: string
   observed: 'consumption_kwh' | 'voltage_v' | 'current_a' | 'power_factor'
   baseline: 'baseline_kwh' | 'baseline_voltage_v' | 'baseline_current_a' | 'baseline_power_factor'
+  /** Tooltip and text-alternative precision. */
   decimals: number
+  /** Fraction digits on the y axis: each metric needs a different precision. */
+  axis: { min: number; max: number }
+  /** Ask the chart for whole-number ticks only. */
+  integerTicks?: boolean
 }
 
 /** The four charts of the meter detail, in reading order. */
 export const METRICS: readonly MetricConfig[] = [
-  { key: 'kwh', title: 'Consumption', unit: 'kWh', observed: 'consumption_kwh', baseline: 'baseline_kwh', decimals: 1 },
-  { key: 'voltage', title: 'Voltage', unit: 'V', observed: 'voltage_v', baseline: 'baseline_voltage_v', decimals: 1 },
-  { key: 'current', title: 'Current', unit: 'A', observed: 'current_a', baseline: 'baseline_current_a', decimals: 2 },
-  { key: 'pf', title: 'Power factor', unit: 'PF', observed: 'power_factor', baseline: 'baseline_power_factor', decimals: 2 },
+  { key: 'kwh', title: 'Consumption', unit: 'kWh', observed: 'consumption_kwh', baseline: 'baseline_kwh', decimals: 1, axis: { min: 0, max: 1 } },
+  { key: 'voltage', title: 'Voltage', unit: 'V', observed: 'voltage_v', baseline: 'baseline_voltage_v', decimals: 1, axis: { min: 0, max: 1 } },
+  { key: 'current', title: 'Current', unit: 'A', observed: 'current_a', baseline: 'baseline_current_a', decimals: 2, axis: { min: 0, max: 0 }, integerTicks: true },
+  { key: 'pf', title: 'Power factor', unit: 'PF', observed: 'power_factor', baseline: 'baseline_power_factor', decimals: 2, axis: { min: 2, max: 2 } },
 ]
+
+export const formatYTick = (metric: MetricConfig, value: number): string => formatAxisNumber(value, metric.axis.min, metric.axis.max)
 
 export interface ChartPoint {
   /** Epoch milliseconds (UTC). */
