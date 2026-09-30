@@ -43,3 +43,14 @@ export function formatAxisTick(ms: number): string {
 export function formatNumber(value: number, decimals: number): string {
   return new Intl.NumberFormat('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value)
 }
+
+const timeOf = (date: Date): string => timeFormat.format(date)
+
+/** A time window in UTC: one date with a time range inside a day, both ends otherwise. */
+export function formatWindow(startIso: string, endIso: string): string {
+  const start = new Date(startIso)
+  const end = new Date(endIso)
+  if (start.getTime() === end.getTime()) return formatDateTime(startIso)
+  if (dateOf(start) === dateOf(end)) return `${dateOf(start)}, ${timeOf(start)}–${timeOf(end)} UTC`
+  return `${formatDateTime(startIso)} – ${formatDateTime(endIso)}`
+}

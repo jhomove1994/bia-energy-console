@@ -52,3 +52,21 @@ export function variationTone(pct: number | null): VariationTone {
   if (magnitude >= 10) return 'medium'
   return 'none'
 }
+
+const actionLabels: Record<string, string> = {
+  INSPECT_LOAD_INCREASE: 'Inspect load increase',
+  CHECK_SUPPLY_LOSS: 'Check supply loss',
+  REVIEW_TRANSIENT: 'Review transient',
+  REVIEW_SCHEDULE: 'Review schedule',
+  OPEN_DQ_TICKET: 'Open data-quality ticket',
+  UPDATE_BASELINE: 'Update baseline',
+  ACKNOWLEDGE_EXPECTED: 'Acknowledge as expected',
+}
+
+/** Short name of a recommended-action code for tables; unknown codes are humanized. */
+export function actionLabel(code: string): string {
+  const known = actionLabels[code]
+  if (known) return known
+  const text = code.replace(/_/g, ' ').toLowerCase()
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}

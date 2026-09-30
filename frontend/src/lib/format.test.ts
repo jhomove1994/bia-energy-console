@@ -1,4 +1,4 @@
-import { formatAxisTick, formatNumber, formatConfidence, formatDate, formatDateTime, formatKwh, formatSignedPercent } from './format'
+import { formatAxisTick, formatNumber, formatConfidence, formatDate, formatDateTime, formatKwh, formatSignedPercent, formatWindow } from './format'
 
 describe('formatKwh', () => {
   it('groups thousands and keeps one decimal', () => {
@@ -58,5 +58,19 @@ describe('formatNumber', () => {
     expect(formatNumber(2180.456, 1)).toBe('2,180.5')
     expect(formatNumber(0.951, 2)).toBe('0.95')
     expect(formatNumber(230, 0)).toBe('230')
+  })
+})
+
+describe('formatWindow', () => {
+  it('shows one date and a time range when the window sits inside a day', () => {
+    expect(formatWindow('2026-09-12T14:00:00Z', '2026-09-12T20:00:00Z')).toBe('12 Sep 2026, 14:00–20:00 UTC')
+  })
+
+  it('shows both ends when the window spans days', () => {
+    expect(formatWindow('2026-09-12T14:00:00Z', '2026-09-14T23:00:00Z')).toBe('12 Sep 2026, 14:00 UTC – 14 Sep 2026, 23:00 UTC')
+  })
+
+  it('uses a single time for a one-reading window', () => {
+    expect(formatWindow('2026-09-12T14:00:00Z', '2026-09-12T14:00:00Z')).toBe('12 Sep 2026, 14:00 UTC')
   })
 })

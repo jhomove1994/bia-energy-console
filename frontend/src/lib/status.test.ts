@@ -1,4 +1,4 @@
-import { variationTone, severityLabel, severityToken, statusLabel, statusToken, typeLabel, typeToken } from './status'
+import { actionLabel, variationTone, severityLabel, severityToken, statusLabel, statusToken, typeLabel, typeToken } from './status'
 
 describe('severityToken', () => {
   it('maps each severity to its design token', () => {
@@ -45,5 +45,17 @@ describe('variationTone', () => {
     expect(variationTone(1.1)).toBe('none')
     expect(variationTone(-0.3)).toBe('none')
     expect(variationTone(null)).toBe('none')
+  })
+})
+
+describe('actionLabel', () => {
+  it('names each action code in a few words', () => {
+    expect(actionLabel('INSPECT_LOAD_INCREASE')).toBe('Inspect load increase')
+    expect(actionLabel('OPEN_DQ_TICKET')).toBe('Open data-quality ticket')
+    expect(actionLabel('ACKNOWLEDGE_EXPECTED')).toBe('Acknowledge as expected')
+  })
+
+  it('humanizes a code it does not know', () => {
+    expect(actionLabel('CALIBRATE_SENSOR')).toBe('Calibrate sensor')
   })
 })
