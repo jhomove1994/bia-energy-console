@@ -156,5 +156,49 @@ Detector API (all pure, take a sorted per-meter series): `DetectConsumption`, `D
 - Config carries fields for later slices (events, correlation, severity, confidence) so the table is complete per task 3.2.
 - Size: slice 3 adds 1,805 lines across 10 files (about 950 in tests) vs ~520 forecast. `size:exception` accepted for all PRs.
 
+## Batch 4: Slice 4a (complete)
+
+Completed tasks: 4.1 - 4.4 (56/125 overall).
+
+### Slice 4a (branch `feat/04a-engine-correlate-classify`, base `feat/03-engine-detectors`)
+
+Commits (work units):
+| Hash | Message |
+|------|---------|
+| af45fff | feat(engine): group detector signals into one incident per meter window (4.1, 4.2) |
+| 7a1cc68 | feat(engine): match events to incidents with direction-aware explanatory power (4.3, 4.4) |
+| 70f2ffd | refactor(engine): extract the hourly gate so recovery reuses it |
+| 694b679 | feat(engine): classify incidents in order with recovery and kind assignment (4.3, 4.4) |
+
+API (all pure): `Correlate(signals, cfg) []Incident` (any number of meters, ordered by meter then onset); `Incident{MeterID, Start, End, Sign, Persistent, Seeds, Attached}` with `IsConsumption()`, `IsDataQuality()`, `PatternOnly()`; `MatchEvent(inc, events, cfg) *EventMatch{Event, Power, Explains, Distance}`; `Recovered(inc, series, b, cfg) bool`; `Classify(inc, match, recovered) Classified{Incident, Type, Kind, Recovered, Event}`; `ClassifyIncident(inc, events, series, b, cfg)` composes the three. There is still no `Analyze` (task 4.10) and no scoring (4.6).
+
+### TDD Cycle Evidence (slice 4a)
+| Task | Test file | RED (observed) | GREEN | TRIANGULATE | REFACTOR |
+|------|-----------|----------------|-------|-------------|----------|
+| 4.1/4.2 correlate | `engine/correlate_test.go` | `undefined: Correlate` build failure | `ok energy/internal/engine`; one run failed first (adjacent orphan days attached to each other instead of merging), fixed by promoting a whole class before merging | one window with all evidence, two windows, secondaries never extend the window, slack boundary 2 h vs 3 h on both sides, seed merge boundary + config override, overlap uses earliest onset, orphan daily promotes, adjacent days merge, orphan pattern break, orphan jumps dropped, short vs standalone ratio, covered standalone ratio stays evidence, multi-meter ordering, incident traits per seed kind, synthetic detectors end to end, orphan jump attaches to promoted incident | none needed |
+| 4.3/4.4 events | `engine/events_test.go` | `undefined: EventMatch, MatchEvent` | ok | outage on decrease/increase, UNKNOWN context, op-change both signs and spike, tolerance boundaries (0, 2, 3, 10 h) + config override, other meter ignored, DQ event window (start-2h..end), 5 raw type spellings normalized, tie-breaks (power, closeness, time) and direction-aware power | none needed |
+| 4.3/4.4 classify | `engine/classify_test.go` | `undefined: Recovered, Classified, Classify, ClassifyIncident` | ok on first run | recovery 12/11/many/at series end, flagged hour and missing reading break it, config override, insufficient history; 15 ordered-classification cases; every DQ seed kind + drift; pattern-only; synthetic recovered/ongoing/no-event outages end to end | extracted `hourFlagged` from `DetectConsumption` (engine tests green before and after) |
+
+### Work Unit Evidence (slice 4a)
+| Evidence | Value |
+|---|---|
+| Focused test command | `cd backend && go test ./internal/engine -count=1`: ok; full `go test ./... -count=1`: ok for 8 packages; `go vet ./...` clean; `gofmt -l .` empty |
+| Runtime harness | Throwaway test (deleted, not committed) running detectors, `Correlate`, `ClassifyIncident` over `data/*.csv`: 4 incidents in 12 meters: M-104 EXPLAINABLE_ANOMALY LEVEL_SHIFT_UP (OPERATIONAL_CHANGE p0.9, not recovered); M-106 FALSE_POSITIVE SUSTAINED_DECREASE (SCHEDULED_OUTAGE p1.0, recovered); M-109 REAL_ANOMALY LEVEL_SHIFT_UP (UNKNOWN p0, context only; 1 seed, 7 attached); M-112 DATA_QUALITY DATA_INCONSISTENCY (DATA_QUALITY event, 2 seeds). The 8 healthy meters produce no incident |
+| Rollback boundary | `backend/internal/engine/{correlate,events,classify}.go` and their tests, plus the `hourFlagged` extraction in `detect.go` |
+
+### Open items from slice 3 (resolved)
+1. Orphan promotion drops stable-ratio signals that are not `Standalone`; the 1-2 h orphan ratio secondaries on two healthy meters therefore produce no incident (dataset run confirms). Covered by `TestOrphanStableRatioNeedsToBeStandalone`. The promoter trusts the detector's `Standalone` flag instead of re-deriving it from `Hours`, so the threshold lives in one place.
+2. Ratio-unstable grouping and DQ cluster merge use `DQWindowHours` as gap: confirmed against design 2.4 (unstable = 24 h window of deviant hours; cluster windows merge "within 24 h"). No change, no new config field.
+
+### Deviations / notes (slice 4a)
+- "Within AttachSlackHours" is measured from one window end to the next window start (`start - end <= 2 h`, at most one unflagged hour between), the literal reading of design 2.5, applied identically to seed merging and secondary attachment.
+- Promotion happens class by class (daily variation, standalone ratio, pattern break) with a merge between classes: consecutive orphan days form one incident and weaker evidence of the same window attaches instead of opening a second incident. Non-promotable orphans (single jumps, short ratio runs) attach to any covering incident, including promoted ones, else are dropped.
+- `Incident.Persistent` is true for a persistent-shift seed and also for a promoted daily-variation seed whose window is at least `PersistMinHours` (a whole-day deviation), so an OPERATIONAL_CHANGE can explain an orphan-day incident. The design does not cover this case.
+- Recovery counts only consecutive readings exactly 1 h apart starting at the hour after the window; a missing reading ends the run. A window that ends with the series is never recovered.
+- `EventMatch.Power` is direction-aware (0 when type or direction does not fit); `Explains` needs `Power >= ExplainPowerMin` and `Power > 0`. DATA_QUALITY events never explain; the confidence bonus is applied by scoring (4.6) from `Event.Event.Type`.
+- Event normalization is applied inside `MatchEvent` via `domain.NormalizeEventType` (idempotent), so callers may pass raw types.
+- A stable-ratio drift is data quality only when the ratio run is a seed (promoted orphan); attached to a consumption incident it is corroboration only, which keeps M-109 REAL.
+- Size: slice 4a adds 1,235 lines across 7 files (about 800 in tests) in 4 commits. `size:exception` accepted for all PRs.
+
 ## Remaining
-Slices 4a - 9 (73 tasks) not started.
+Slices 4b - 9 (69 tasks) not started. Next: 4.5 onward (score, recommend, explainer, `Analyze`, dataset test, calibration, guard test, `docs/thresholds.md`).
