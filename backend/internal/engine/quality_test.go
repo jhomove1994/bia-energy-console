@@ -334,3 +334,90 @@ func TestRatioSkippedWithoutBaselineRatio(t *testing.T) {
 		t.Fatalf("signals = %+v", got)
 	}
 }
+
+func dropAbs(series []domain.Reading, abs ...int) []domain.Reading {
+	skip := map[int]bool{}
+	for _, a := range abs {
+		skip[a] = true
+	}
+	var out []domain.Reading
+	for i, r := range series {
+		if !skip[i] {
+			out = append(out, r)
+		}
+	}
+	return out
+}
+
+func TestMissingHourYieldsGapSignalAtThatTimestamp(t *testing.T) {
+	series := dropAbs(synth(10, flat20(), nil), 8*24+5)
+	got := DetectGaps(series)
+	if len(got) != 1 {
+		t.Fatalf("signals = %+v", got)
+	}
+	s := got[0]
+	want := testStart.AddDate(0, 0, 8).Add(5 * hour)
+	if s.Kind != KindGap || s.Role != RoleSeed || !s.Start.Equal(want) || !s.End.Equal(want) {
+		t.Fatalf("signal = %+v", s)
+	}
+	if s.Count != 1 || s.Hours != 1 || s.MeterID != "X-1" {
+		t.Fatalf("count/hours/meter = %d/%d/%q", s.Count, s.Hours, s.MeterID)
+	}
+}
+
+func TestConsecutiveMissingHoursFormOneGapRun(t *testing.T) {
+	base := 8 * 24
+	series := dropAbs(synth(10, flat20(), nil), base+5, base+6, base+7, base+20)
+	got := DetectGaps(series)
+	if len(got) != 2 {
+		t.Fatalf("signals = %+v", got)
+	}
+	if got[0].Count != 3 || got[0].Hours != 3 || !got[0].End.Equal(testStart.AddDate(0, 0, 8).Add(7*hour)) {
+		t.Fatalf("first run = %+v", got[0])
+	}
+	if got[1].Count != 1 {
+		t.Fatalf("second run = %+v", got[1])
+	}
+}
+
+func TestSensorFaultYieldsStatusSignal(t *testing.T) {
+	series := synth(10, flat20(), hoursAt(8, span(3, 4), func(r *domain.Reading) { r.Status = "SENSOR_FAULT" }))
+	got := DetectStatus(series)
+	if len(got) != 1 {
+		t.Fatalf("signals = %+v", got)
+	}
+	s := got[0]
+	if s.Kind != KindStatus || s.Role != RoleSeed || s.Detail != "SENSOR_FAULT" || s.Count != 2 || s.Hours != 2 {
+		t.Fatalf("signal = %+v", s)
+	}
+	if !s.Start.Equal(testStart.AddDate(0, 0, 8).Add(3 * hour)) {
+		t.Fatalf("start = %v", s.Start)
+	}
+}
+
+func TestDifferentStatusesFormSeparateRuns(t *testing.T) {
+	series := synth(10, flat20(), func(d, h int, r *domain.Reading) {
+		hoursAt(8, []int{3}, func(r *domain.Reading) { r.Status = "SENSOR_FAULT" })(d, h, r)
+		hoursAt(8, []int{4}, func(r *domain.Reading) { r.Status = "COMM_LOSS" })(d, h, r)
+	})
+	got := DetectStatus(series)
+	if len(got) != 2 || got[0].Detail != "SENSOR_FAULT" || got[1].Detail != "COMM_LOSS" {
+		t.Fatalf("signals = %+v", got)
+	}
+}
+
+func TestCleanSeriesHasNoGapOrStatusSignals(t *testing.T) {
+	series := synth(10, shapedProfile(), nil)
+	if got := DetectGaps(series); len(got) != 0 {
+		t.Fatalf("gaps = %+v", got)
+	}
+	if got := DetectStatus(series); len(got) != 0 {
+		t.Fatalf("status = %+v", got)
+	}
+	if got := DetectJumps(series, DefaultConfig()); len(got) != 0 {
+		t.Fatalf("jumps = %+v", got)
+	}
+	if got := ratioSignals(series, DefaultConfig()); len(got) != 0 {
+		t.Fatalf("ratio = %+v", got)
+	}
+}

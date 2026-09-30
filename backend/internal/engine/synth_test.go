@@ -34,19 +34,22 @@ func shapedProfile() [24]float64 {
 // when not nil, may change any field of the reading at (day, hour) after the
 // healthy values were set.
 func synth(days int, profile [24]float64, mutate func(day, hour int, r *domain.Reading)) []domain.Reading {
-	return hourlySeries(days, func(d, h int) domain.Reading {
+	series := hourlySeries(days, func(_, h int) domain.Reading {
 		kwh := profile[h]
-		r := domain.Reading{
+		return domain.Reading{
 			KWh:      kwh,
 			VoltageV: synthV,
 			CurrentA: kwh * 1000 / (synthRatio * synthV * synthPF),
 			PF:       synthPF,
 		}
-		if mutate != nil {
-			mutate(d, h, &r)
-		}
-		return r
 	})
+	if mutate != nil {
+		// Applied after hourlySeries so the mutation can also change Status.
+		for i := range series {
+			mutate(i/24, i%24, &series[i])
+		}
+	}
+	return series
 }
 
 // scaleLoad scales the energy and the current together so the electrical

@@ -304,3 +304,59 @@ func ratioSignal(series []domain.Reading, b Baseline, group []ratioHour, kind Si
 		Standalone: kind == KindRatioStable && hours >= cfg.RatioStandaloneMinHours,
 	}
 }
+
+// DetectGaps reports runs of missing hourly timestamps. The expected cadence
+// is one reading per hour; each run of missing timestamps between two
+// consecutive readings is one seed signal spanning the missing hours.
+func DetectGaps(series []domain.Reading) []Signal {
+	var out []Signal
+	for i := 1; i < len(series); i++ {
+		prev, cur := series[i-1], series[i]
+		missing := int(cur.TS.Sub(prev.TS)/hour) - 1
+		if missing <= 0 {
+			continue
+		}
+		out = append(out, Signal{
+			MeterID: cur.MeterID,
+			Kind:    KindGap,
+			Metric:  "missing_readings",
+			Start:   prev.TS.Add(hour),
+			End:     cur.TS.Add(-hour),
+			Role:    RoleSeed,
+			Hours:   missing,
+			Count:   missing,
+			Unit:    "readings",
+		})
+	}
+	return out
+}
+
+// DetectStatus reports runs of consecutive rows carrying the same status other
+// than domain.StatusOK. The status is compared exactly as stored.
+func DetectStatus(series []domain.Reading) []Signal {
+	var out []Signal
+	for i := 0; i < len(series); {
+		if series[i].Status == domain.StatusOK {
+			i++
+			continue
+		}
+		j := i
+		for j+1 < len(series) && series[j+1].Status == series[i].Status && series[j+1].TS.Sub(series[j].TS) == hour {
+			j++
+		}
+		out = append(out, Signal{
+			MeterID: series[i].MeterID,
+			Kind:    KindStatus,
+			Metric:  "reading_status",
+			Start:   series[i].TS,
+			End:     series[j].TS,
+			Role:    RoleSeed,
+			Hours:   int(series[j].TS.Sub(series[i].TS)/hour) + 1,
+			Count:   j - i + 1,
+			Unit:    "readings",
+			Detail:  series[i].Status,
+		})
+		i = j + 1
+	}
+	return out
+}
