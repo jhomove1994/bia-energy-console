@@ -1,0 +1,66 @@
+/*
+ * Design tokens for the Energy Console (design section 6.5).
+ * Colors are space-separated RGB channels so Tailwind can apply alpha
+ * (`bg-primary/10`). The hex value is noted beside each channel triplet.
+ * Every "-ink" token is the darker shade used for text on a tinted surface,
+ * chosen to keep contrast at or above 4.5:1 (WCAG AA).
+ */
+:root {
+  /* Surfaces and text */
+  --bg: 246 248 251; /* #F6F8FB console canvas */
+  --surface: 255 255 255; /* #FFFFFF cards */
+  --border: 228 233 240; /* #E4E9F0 */
+  --text: 15 23 42; /* #0F172A */
+  --muted: 91 107 128; /* #5B6B80 (5.1:1 on canvas) */
+
+  /* Navigation */
+  --sidebar: 15 27 45; /* #0F1B2D navy */
+  --sidebar-hover: 22 38 61; /* #16263D */
+  --sidebar-text: 203 213 225; /* #CBD5E1 */
+
+  /* Brand */
+  --primary: 14 165 164; /* #0EA5A4 energy teal: series, decoration, focus glow */
+  --primary-strong: 15 118 110; /* #0F766E teal-700: buttons and links (5.5:1 with white) */
+  --accent: 245 158 11; /* #F59E0B electric amber: Run AI Analysis */
+
+  /* Severity */
+  --sev-high: 220 38 38; /* #DC2626 */
+  --sev-high-ink: 185 28 28; /* #B91C1C */
+  --sev-medium: 245 158 11; /* #F59E0B */
+  --sev-medium-ink: 180 83 9; /* #B45309 */
+  --sev-low: 100 116 139; /* #64748B */
+  --sev-low-ink: 71 85 105; /* #475569 */
+
+  /* Anomaly type */
+  --type-real: 220 38 38; /* #DC2626 */
+  --type-real-ink: 185 28 28; /* #B91C1C */
+  --type-dq: 124 58 237; /* #7C3AED */
+  --type-dq-ink: 109 40 217; /* #6D28D9 */
+  --type-expl: 37 99 235; /* #2563EB */
+  --type-expl-ink: 29 78 216; /* #1D4ED8 */
+  --type-fp: 16 185 129; /* #10B981 */
+  --type-fp-ink: 4 120 87; /* #047857 */
+
+  /* Meter status */
+  --status-ok: 16 185 129; /* #10B981 */
+  --status-ok-ink: 4 120 87; /* #047857 */
+  --status-alert: 245 158 11; /* #F59E0B */
+  --status-alert-ink: 180 83 9; /* #B45309 */
+  --status-critical: 220 38 38; /* #DC2626 */
+  --status-critical-ink: 185 28 28; /* #B91C1C */
+
+  /* Shape and elevation */
+  --radius: 12px;
+  --shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+  --shadow-raised: 0 4px 16px rgb(15 23 42 / 0.08);
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --duration-fast: 150ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+  }
+}

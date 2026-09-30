@@ -1,3 +1,39 @@
+@import '@fontsource-variable/inter';
+@import './tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    @apply bg-bg text-text antialiased;
+    font-family: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  body {
+    @apply min-h-screen text-sm;
+  }
+
+  /* Figures line up in columns and KPIs. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--primary-strong));
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
