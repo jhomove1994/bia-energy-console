@@ -2,6 +2,8 @@ import { createContext, useContext } from 'react'
 
 export interface AuthState {
   isAuthenticated: boolean
+  /** Display name of the signed-in user, or null when signed out. */
+  username: string | null
   /** Rejects with an ApiError (e.g. code `invalid_credentials`) when the API refuses. */
   login: (username: string, password: string) => Promise<void>
   logout: () => void

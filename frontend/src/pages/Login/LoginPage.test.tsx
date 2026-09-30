@@ -6,13 +6,14 @@ import { AuthGuard } from '../../app/AuthGuard'
 import { AppProviders } from '../../app/providers'
 import { createTestQueryClient, jsonResponse } from '../../test/utils'
 import { LoginPage } from './LoginPage'
+import { routerFuture } from '../../app/router'
 
 const fetchMock = vi.fn<typeof fetch>()
 
 function renderApp(path = '/login') {
   render(
     <AppProviders queryClient={createTestQueryClient()}>
-      <MemoryRouter initialEntries={[path]}>
+      <MemoryRouter future={routerFuture} initialEntries={[path]}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route element={<AuthGuard />}>

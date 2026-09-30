@@ -4,11 +4,12 @@ import { setToken } from '../api/token'
 import { createTestQueryClient } from '../test/utils'
 import { AuthGuard } from './AuthGuard'
 import { AppProviders } from './providers'
+import { routerFuture } from './router'
 
 function renderAt(path: string) {
   return render(
     <AppProviders queryClient={createTestQueryClient()}>
-      <MemoryRouter initialEntries={[path]}>
+      <MemoryRouter future={routerFuture} initialEntries={[path]}>
         <Routes>
           <Route path="/login" element={<p>login screen</p>} />
           <Route element={<AuthGuard />}>

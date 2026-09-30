@@ -9,10 +9,11 @@ import { useAuth } from './useAuth'
 const fetchMock = vi.fn<typeof fetch>()
 
 function Probe() {
-  const { isAuthenticated, login, logout } = useAuth()
+  const { isAuthenticated, username, login, logout } = useAuth()
   return (
     <div>
       <p>{isAuthenticated ? 'signed in' : 'signed out'}</p>
+      <p data-testid="who">{username ?? 'nobody'}</p>
       <button onClick={() => login('admin', 'admin123').catch(() => undefined)}>login</button>
       <button onClick={() => login('admin', 'nope').catch((e: Error) => document.title = e.message)}>bad login</button>
       <button onClick={logout}>logout</button>
@@ -55,6 +56,7 @@ describe('useAuth', () => {
     await userEvent.click(screen.getByRole('button', { name: 'login' }))
 
     expect(await screen.findByText('signed in')).toBeInTheDocument()
+    expect(screen.getByTestId('who')).toHaveTextContent('admin')
     expect(getToken()).toBe('tok-1')
     const [url, init] = fetchMock.mock.calls[0]!
     expect(url).toBe('/api/auth/login')
@@ -79,7 +81,15 @@ describe('useAuth', () => {
     await userEvent.click(screen.getByRole('button', { name: 'logout' }))
 
     expect(screen.getByText('signed out')).toBeInTheDocument()
+    expect(screen.getByTestId('who')).toHaveTextContent('nobody')
     expect(getToken()).toBeNull()
+  })
+
+  it('remembers the username across a reload', () => {
+    setToken('stored')
+    window.localStorage.setItem('energy.username', 'admin')
+    renderProbe()
+    expect(screen.getByTestId('who')).toHaveTextContent('admin')
   })
 
   it('signs out when any API call answers 401', async () => {
