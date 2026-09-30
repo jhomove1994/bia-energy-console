@@ -475,5 +475,37 @@ Screenshots (scratchpad, not committed): `progress.png`, `anomalies.png`, `inves
 - Backend gotcha: a stale API process from an earlier session can keep port 18085, so a harness run silently hits the old DB; check `lsof -i :18085` first.
 - Size: 56 files, 2,733 additions and 311 deletions (lockfile excluded), about half tests, in 10 commits. `size:exception` accepted for all PRs.
 
+## Batch 9: Slice 9 Delivery (complete) plus explainer fix
+
+Completed tasks: 9.1 - 9.11 (125/125 overall). Branch `feat/09-delivery` (base `feat/08-analysis-anomalies-investigation`).
+
+| Hash | Message |
+|------|---------|
+| 104f2cc | fix(explain): render power factor and ratio with two decimals |
+| b5f2166 | feat(delivery): add Dockerfiles, nginx config and zero-config compose stack |
+| 72be469 | docs: add README with architecture, threshold derivation and validation results |
+| (this commit) | docs(openspec): mark slice 9 complete and record apply progress |
+
+### TDD Cycle Evidence (explainer fix)
+| Task | Test file | RED (observed) | GREEN | REFACTOR |
+|------|-----------|----------------|-------|----------|
+| fix | `backend/internal/adapters/explain/template_test.go` `TestPowerFactorRendersWithTwoDecimals` | reason and action lacked "0.94" and "0.74" (rendered "0.9" and "0.7") | `ok energy/internal/adapters/explain`; full backend suite 9 packages ok | new `ratio()` helper (2 decimals) used for power factor and hourly-pattern correlation; kWh, V, A stay at 1 decimal. The electrical-ratio detail was already 2 decimals (`score.go`). |
+
+### Work Unit Evidence (slice 9)
+| Evidence | Value |
+|---|---|
+| Focused test command | `cd backend && go vet ./... && gofmt -l . && go test ./... -count=1`: 9 packages ok; `cd frontend && npx tsc --noEmit` clean; `npx vitest run --reporter=dot`: 32 files, 250 tests passed |
+| Runtime harness | `docker compose config -q` ok; `docker compose up --build -d` (api healthy before web starts); via `http://localhost:8080`: `/` 200 text/html, `/meters/M-109` returns index.html, `/api/health` `{"status":"ok"}`, hashed asset served gzip with `Cache-Control: public, immutable`; login ok; 12 meters; `POST /api/ai/analyze` then polling through readings, baseline, correlation, explanation, recommendation to done; `GET /api/anomalies` returns 4 items (M-109 REAL HIGH, M-112 DQ HIGH, M-104 EXPLAINABLE MEDIUM, M-106 FP LOW) with summary `4 anomalies detected · 2 require priority attention`; M-109 reason now says "power factor moved from 0.94 to 0.74". `down` then `up` kept the 4 anomalies; `down -v` then `up` reseeded (12 meters, no analysis). Images: web 50.6 MB, api 19.7 MB. Stack removed with `down -v`. |
+| Rollback boundary | `backend/Dockerfile`, `backend/.dockerignore`, `frontend/Dockerfile`, `.dockerignore`, `deploy/nginx.conf`, `docker-compose.yml`, `.env.example`, `README.md`; `docs/thresholds.md` deletion (content folded into README); explainer change in `backend/internal/adapters/explain/template.go` and its test |
+
+### Deviations / notes (slice 9)
+- `backend/Dockerfile` uses `golang:1.23.4-alpine` with `GOTOOLCHAIN=local` (go.mod pins toolchain go1.23.4), `-ldflags="-s -w"`, and `alpine:3.20` runtime with non-root user `app`. CSVs are not baked in: compose mounts `./data:/data:ro`.
+- `frontend/Dockerfile` build context is the repository root (compose `context: .`, `dockerfile: frontend/Dockerfile`) so `deploy/nginx.conf` is reachable; it uses `nginx:1.27-alpine`. A root `.dockerignore` (excludes backend, docs, openspec, node_modules, dist) serves that build; `backend/.dockerignore` serves the backend build.
+- Compose adds an optional `WEB_PORT` (default 8080) and `${VAR:-default}` interpolation for demo credentials, secret, TTL and stage delay, so `.env` is optional. `ANALYSIS_STAGE_DELAY_MS` defaults to 300 in compose.
+- nginx: gzip, `/assets/` cached one year immutable, `index.html` no-cache, history fallback, `/api/` proxied.
+- 9.9: `rg -n "expected[_]results" . --glob '!node_modules' --glob '!.git'` still matches two SDD artifacts under `openspec/` (proposal out-of-scope bullet and the platform-delivery spec scenario that describes this very check). Task 9.9 excludes `openspec/**`; with that glob it returns nothing. Build, tests and runtime read only `data/readings.csv` and `data/events.csv`.
+- 9.7: `docs/thresholds.md` removed; no remaining links to it outside `openspec/`.
+- The task 9.11 checklist in `proposal.md` was left untouched (optional).
+
 ## Remaining
-Slice 9 (11 tasks) not started. Next: 9.1 onward (Docker, nginx, compose, README).
+None. All 125 tasks complete. Next: archive or optional verify; PR creation is the user's call.

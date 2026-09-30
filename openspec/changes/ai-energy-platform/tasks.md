@@ -255,17 +255,17 @@ Spec coverage: web-console (Run AI Analysis with live progress, Anomalies table,
 Branch: `feat/09-delivery` (base slice 8 branch). Forecast: ~380 lines (edge). Task count: 11.
 Spec coverage: platform-delivery (Zero-config compose, Data and persistence, Documented configuration, README, Automated verification, Source-data boundaries).
 
-- [ ] 9.1 `backend/Dockerfile`: `golang:1.23-alpine` build (`CGO_ENABLED=0 go build -trimpath -o /out/api ./cmd/api`) then `alpine:3.20` with `wget`, non-root user, `EXPOSE 8080`.
-- [ ] 9.2 `frontend/Dockerfile`: `node:20-alpine` (`npm ci && npm run build`) then `nginx:alpine` with `deploy/nginx.conf`.
-- [ ] 9.3 `deploy/nginx.conf`: serve SPA with `try_files $uri /index.html`, proxy `/api/` to `http://api:8080`.
-- [ ] 9.4 `docker-compose.yml`: `api` (env defaults from design section 7 with `ANALYSIS_STAGE_DELAY_MS=300`, healthcheck `wget -qO- localhost:8080/api/health`, `./data:/data:ro`, named volume `energy-db` at `/var/lib/energy`), `web` (`depends_on: api: condition: service_healthy`, ports `8080:80`); no `.env` needed.
-- [ ] 9.5 `README.md` part 1: how to run (`docker-compose up`, local dev with `go run ./cmd/api` and Vite), demo credentials and the 5-10 minute demo flow, architecture (layers, dependency direction, `Explainer` port, incident model, async job stages), key decisions (SQLite, no LLM, stdlib router, stateless token, atomic design).
-- [ ] 9.6 `README.md` part 2: threshold derivation table listing every `Config` field with default, data-derived rationale and the per-meter justifications (healthy envelope vs targets), sourced from `docs/thresholds.md`.
-- [ ] 9.7 Remove `docs/thresholds.md` after its content is merged into `README.md` (single source of truth); update any link.
-- [ ] 9.8 `README.md` part 3: testing section with `go test ./... -count=1` (short summary output) and frontend test command, plus the environment variable table with defaults (stage delay 300 in compose, 0 in tests).
-- [ ] 9.9 Source-data boundary check: `rg -n "expected[_]results" . --glob '!openspec/**'` returns nothing; confirm build, tests, and runtime read only `data/readings.csv` and `data/events.csv`.
-- [ ] 9.10 Compose smoke (requires Docker): `docker compose config -q`; `docker compose up --build -d`; login on `http://localhost:8080`, 12 meters listed, run analysis to done with 4 anomalies; `docker compose down` then `up` keeps counts; `docker compose down -v` then `up` reseeds.
-- [ ] 9.11 Final verification: `cd backend && go test ./... -count=1`, `cd frontend && npx vitest run --reporter=dot && npm run build`; tick the change success criteria checklist in `proposal.md` evidence notes if maintainers want it.
+- [x] 9.1 `backend/Dockerfile`: `golang:1.23-alpine` build (`CGO_ENABLED=0 go build -trimpath -o /out/api ./cmd/api`) then `alpine:3.20` with `wget`, non-root user, `EXPOSE 8080`.
+- [x] 9.2 `frontend/Dockerfile`: `node:20-alpine` (`npm ci && npm run build`) then `nginx:alpine` with `deploy/nginx.conf`.
+- [x] 9.3 `deploy/nginx.conf`: serve SPA with `try_files $uri /index.html`, proxy `/api/` to `http://api:8080`.
+- [x] 9.4 `docker-compose.yml`: `api` (env defaults from design section 7 with `ANALYSIS_STAGE_DELAY_MS=300`, healthcheck `wget -qO- localhost:8080/api/health`, `./data:/data:ro`, named volume `energy-db` at `/var/lib/energy`), `web` (`depends_on: api: condition: service_healthy`, ports `8080:80`); no `.env` needed.
+- [x] 9.5 `README.md` part 1: how to run (`docker-compose up`, local dev with `go run ./cmd/api` and Vite), demo credentials and the 5-10 minute demo flow, architecture (layers, dependency direction, `Explainer` port, incident model, async job stages), key decisions (SQLite, no LLM, stdlib router, stateless token, atomic design).
+- [x] 9.6 `README.md` part 2: threshold derivation table listing every `Config` field with default, data-derived rationale and the per-meter justifications (healthy envelope vs targets), sourced from `docs/thresholds.md`.
+- [x] 9.7 Remove `docs/thresholds.md` after its content is merged into `README.md` (single source of truth); update any link.
+- [x] 9.8 `README.md` part 3: testing section with `go test ./... -count=1` (short summary output) and frontend test command, plus the environment variable table with defaults (stage delay 300 in compose, 0 in tests).
+- [x] 9.9 Source-data boundary check: `rg -n "expected[_]results" . --glob '!openspec/**'` returns nothing; confirm build, tests, and runtime read only `data/readings.csv` and `data/events.csv`.
+- [x] 9.10 Compose smoke (requires Docker): `docker compose config -q`; `docker compose up --build -d`; login on `http://localhost:8080`, 12 meters listed, run analysis to done with 4 anomalies; `docker compose down` then `up` keeps counts; `docker compose down -v` then `up` reseeds.
+- [x] 9.11 Final verification: `cd backend && go test ./... -count=1`, `cd frontend && npx vitest run --reporter=dot && npm run build`; tick the change success criteria checklist in `proposal.md` evidence notes if maintainers want it.
 
 ---
 
