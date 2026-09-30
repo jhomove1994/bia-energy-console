@@ -6,10 +6,10 @@ Change: `ai-energy-platform` | Store: hybrid | Base branch: `main` | Design: `de
 
 | Field | Value |
 |-------|-------|
-| Estimated changed lines | ~4,500 authored (tests and docs included; CSV copies, lockfiles excluded) |
+| Estimated changed lines | ~5,700 authored including slice 10 (tests and docs included; CSV copies, lockfiles excluded) |
 | 400-line budget risk | High |
 | Chained PRs recommended | Yes |
-| Suggested split | Slice 0 (baseline commit) then PR 1 -> PR 2 -> PR 3 -> PR 4a -> PR 4b -> PR 5 -> ... -> PR 9 |
+| Suggested split | Slice 0 (baseline commit) then PR 1 -> PR 2 -> PR 3 -> PR 4a -> PR 4b -> PR 5 -> ... -> PR 9 -> PR 10 |
 | Delivery strategy | ask-on-risk |
 | Chain strategy | stacked-to-main |
 
@@ -269,6 +269,26 @@ Spec coverage: platform-delivery (Zero-config compose, Data and persistence, Doc
 
 ---
 
+## Slice 10: Spanish user-facing copy
+
+Branch: `feat/10-spanish-ui-copy` (base `feat/09-delivery`). User-approved scope change after slice 9 (proposal decision 7): everything displayed is neutral Spanish; code, API values, docs and commits stay in English. `size:exception` accepted (blanket). Task count: 12.
+Spec coverage: web-console (Spanish user-facing copy), ai-analysis (summary text, template explainer), dashboard-summary.
+
+- [x] 10.1 Backend summary text: `app/summary.go` renders `N anomalías detectadas · P requieren atención prioritaria` with singular forms (`1 anomalía detectada`, `1 requiere atención prioritaria`); tests in `summary_test.go`, `analysis_service_test.go`, `dashboard_service_test.go`, `analysis_http_test.go`, `analyses_test.go` assert the Spanish text first (evidence: 4/2 gives `4 anomalías detectadas · 2 requieren atención prioritaria`, 0 gives `0 anomalías detectadas · 0 requieren atención prioritaria`).
+- [x] 10.2 Spanish formatting helpers in `domain/spanish.go` (`FormatNumber`, `FormatSigned`, `FormatStamp`, `EventTypeName`): decimal comma, dot thousands, `12 sept 2026, 14:00 UTC`, Spanish event names. Placed in `domain` because the engine may import only `domain` and the stdlib (purity guard stays green).
+- [x] 10.3 Template explainer in Spanish (`explain/template.go`): reasons and all seven actions, numbers with comma decimals, event type names; an UNKNOWN related event is not quoted (`Ningún evento conocido explica este cambio.`). Tests in `template_test.go` (Spanish assertions, no English fragments, event names, unknown event).
+- [x] 10.4 Engine evidence details in Spanish (`engine/score.go`): `mín 0,58, máx 4,22`, `correlación 0,53, desviación de forma 36,8%`, `Cambio operativo: <descripción>`; no engine logic or thresholds changed.
+- [x] 10.5 Frontend label module `lib/labels.ts` (types, severities, meter and analysis statuses, 7 stages, event types, confidence, anomaly kinds, evidence metrics, units, action labels, API error messages) with `labels.test.ts`; `lib/status.ts` keeps only tokens and tones.
+- [x] 10.6 Formatters in `es-CO` (`lib/format.ts`): `12.345,7 kWh`, `+110,5%`, `12 sept 2026, 14:05 UTC`, axis ticks; tests updated first.
+- [x] 10.7 API errors: `ApiError.message` is the Spanish text of the error code (server message kept in `detail`, never shown); failed-run panel shows a Spanish message.
+- [x] 10.8 Pages and components copy in Spanish: login, sidebar, topbar, dashboard, meters, anomalies, investigation, meter detail, charts (titles, legends, tooltips, hidden summaries), progress panel, stepper, empty/error/404/validation states, aria-labels; filter selects widened for the longer labels.
+- [x] 10.9 `<html lang="es">` with `src/test/indexHtml.test.ts`.
+- [x] 10.10 Tests: assertions moved to Spanish before the copy changed (RED observed in backend and frontend), then GREEN; `fixtures.ts` updated.
+- [x] 10.11 Docs: proposal Resolved Decision 7, specs (`ai-analysis`, `web-console` incl. a new Spanish-copy requirement, `dashboard-summary`), `design.md` summary text, README demo flow and summary text.
+- [x] 10.12 Verification: `go vet`, `gofmt -l`, `go test ./... -count=1`, `tsc --noEmit`, `vitest run`, `npm run build`; leftover English scan of `frontend/src`; compose smoke (summary text, M-109 reason) and headless Chrome screenshots.
+
+---
+
 ## Task Totals
 
 | Slice | Branch | Tasks | Forecast lines |
@@ -284,6 +304,7 @@ Spec coverage: platform-delivery (Zero-config compose, Data and persistence, Doc
 | 7 | `feat/07-meters-detail` | 10 | ~430 |
 | 8 | `feat/08-analysis-anomalies-investigation` | 10 | ~480 |
 | 9 | `feat/09-delivery` | 11 | ~380 |
-| Total | | 125 | ~4,480 |
+| 10 | `feat/10-spanish-ui-copy` | 12 | ~1,200 |
+| Total | | 137 | ~5,680 |
 
 Sequential by design: slices are a stacked chain (each depends on the previous). Parallelizable inside a slice: RED tests for independent detectors (3.4/3.6/3.8/3.10/3.12/3.14), atoms vs molecules (6.5/6.6), Dockerfiles (9.1/9.2/9.3). Frontend slices 6-8 could start after slice 2 API contracts are stable but stay sequential in the stack.

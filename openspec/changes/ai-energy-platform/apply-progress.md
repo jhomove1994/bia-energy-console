@@ -507,5 +507,49 @@ Completed tasks: 9.1 - 9.11 (125/125 overall). Branch `feat/09-delivery` (base `
 - 9.7: `docs/thresholds.md` removed; no remaining links to it outside `openspec/`.
 - The task 9.11 checklist in `proposal.md` was left untouched (optional).
 
+## Batch 10: Slice 10 Spanish user-facing copy (complete)
+
+Completed tasks: 10.1 - 10.12 (137/137 overall). Branch `feat/10-spanish-ui-copy` (base `feat/09-delivery`). User-approved scope change after slice 9; proposal Resolved Decision 7. `size:exception` accepted.
+
+| Hash | Message |
+|------|---------|
+| f9a20f6 | feat(app): render the analysis summary headline in Spanish |
+| c37094f | feat(explain): render reasons, actions and evidence details in Spanish |
+| 95cbdcb | feat(frontend): declare Spanish as the document language |
+| 81ec93d | feat(frontend): translate user-facing copy to Spanish with es-CO formatting |
+| 884331e | fix(explain): do not quote unknown events in the reason text |
+| f55d4ff | docs: document the Spanish user-facing copy decision and update quoted strings |
+| 51dc558 | fix(frontend): widen the filter selects for the longer Spanish labels |
+
+### TDD Cycle Evidence (slice 10)
+| Task | Test file | RED (observed) | GREEN | REFACTOR |
+|------|-----------|----------------|-------|----------|
+| 10.1 | `app/summary_test.go` and four sibling suites | `Summarize = 4/2 "4 anomalies detected..." want "4 anomalías detectadas..."` plus HTTP and service failures | `summaryText` in Spanish; 9 packages ok | dashboard fixtures aligned |
+| 10.2 | `domain/spanish_test.go` | `undefined: Number`, `Signed`, `Stamp` | helpers pass; moved into `domain` after the engine purity guard failed on a new package | renamed to `FormatNumber`, `FormatSigned`, `FormatStamp`, `EventTypeName` |
+| 10.3 | `explain/template_test.go` | reasons lacked `42,0`, `+109,4%`, `12 sept 2026, 14:00 UTC`, `Parada programada`; English fragments found | Spanish templates pass | none |
+| 10.3b | `explain/template_test.go` `TestRealReasonDoesNotQuoteAnUnknownEvent` | reason still quoted `No operational event reported` | `ContextEvent` flag in the view | none |
+| 10.4 | `engine/score_test.go` | `detail = "corr 0.53, shape deviation 36.8%"`, `OPERATIONAL_CHANGE: new line`, `min 230.00 V` | Spanish details | `withUnit` helper (no stray space when the unit is empty) |
+| 10.5/10.6 | `lib/labels.test.ts`, `lib/format.test.ts`, `lib/chartData.test.ts` | unresolved `./labels`; `12 sept. 2026` vs `12 sept 2026`; 8 failures | `labels.ts`, `es-CO` formatters, month period stripped | `status.ts` reduced to tokens and tones |
+| 10.7 | `api/client.test.ts` | 3 failures (`Request failed with status 502` vs Spanish) | `ApiError.message` from the error code | none |
+| 10.8 | 26 component and page suites | 149 failed of 258 after the assertions moved to Spanish | 258 passed after the copy changed | filter widths adjusted for label length |
+| 10.9 | `test/indexHtml.test.ts` | `lang="en"` failed | `lang="es"` | none |
+
+### Work Unit Evidence (slice 10)
+| Evidence | Value |
+|---|---|
+| Focused test command | `cd backend && go vet ./... && gofmt -l . && go test ./... -count=1`: 9 packages ok (plus `domain/spanish_test.go`); `cd frontend && npx tsc --noEmit` clean; `npx vitest run --reporter=dot`: 34 files, 260 tests passed (258 before the index test); `npm run build` ok |
+| Runtime harness | `docker compose up --build -d`; login via curl, `POST /api/ai/analyze`, polled to done; `GET /api/anomalies` `summary_text` is exactly `4 anomalías detectadas · 2 requieren atención prioritaria`; M-109 reason `El consumo promedió 92,8 kWh/h frente a un baseline de 44,1 kWh/h (+110,5%) durante 58 h desde el 12 sept 2026, 14:00 UTC ...`; headless Chrome (script in the scratchpad, not committed) captured `es-dashboard.png`, `es-anomalies.png`, `es-investigation.png` and logged Spanish login, nav, stepper, table, evidence, chart summaries and the 404 state; `docker compose down -v` |
+| Rollback boundary | `backend/internal/domain/spanish*.go`, `backend/internal/app/summary.go`, `backend/internal/adapters/explain/template*.go`, `backend/internal/engine/score*.go` (evidence details only), `frontend/src/**` copy, `frontend/index.html`, docs edits |
+
+### Deviations / notes (slice 10)
+- The formatting helpers live in `internal/domain` (not a new package): the engine purity guard allows only `domain` and the stdlib.
+- Engine evidence `Label` strings and the anomaly `anomaly` title stay English in the API (data, used only as fallback); the UI maps by `metric` and `kind` through `lib/labels.ts`. Evidence `detail` strings are Spanish from the backend.
+- `ApiError.message` is now the Spanish text of the error code; the server message is kept in `ApiError.detail` and never displayed. A failed analysis shows a generic Spanish message, not the raw engine error.
+- Brand `Energy Console`, `Dashboard`, `Baseline`, `Delta`, units (`kWh`, `V`, `A`), `OK`, `CT/PT`, `admin / admin123` and the source event descriptions from `data/events.csv` (for example `Scheduled maintenance outage for 12 hours`) are kept as is: product name, accepted loanwords or data.
+- An UNKNOWN related event is no longer quoted in the real-anomaly reason: `Ningún evento conocido explica este cambio.`
+- Dates read `12 sept 2026, 14:00 UTC`: ICU's `sept.` period is stripped in the frontend to match the backend text.
+- Filter select widths increased (`w-56`; meters sort `17rem`) so `Todas las severidades` is not clipped.
+- `tasks.md` task 5.5 and `exploration.md` keep the original English text as history.
+
 ## Remaining
-None. All 125 tasks complete. Next: archive or optional verify; PR creation is the user's call.
+None. All 137 tasks complete. Next: archive or optional verify; PR creation is the user's call.
