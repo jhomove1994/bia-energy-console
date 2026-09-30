@@ -113,6 +113,7 @@ type view struct {
 }
 
 func num(x float64) string     { return fmt.Sprintf("%.1f", x) }
+func ratio(x float64) string   { return fmt.Sprintf("%.2f", x) }
 func signed(x float64) string  { return fmt.Sprintf("%+.1f", x) }
 func whole(x float64) string   { return fmt.Sprintf("%.0f", x) }
 func stamp(t time.Time) string { return t.UTC().Format(timeLayout) }
@@ -157,10 +158,10 @@ func newView(a domain.Anomaly) view {
 		v.ABase, v.AObs, v.ADelta = num(baseline(e)), num(e.Observed), signed(delta(e))
 	}
 	if e, ok := byMetric["power_factor"]; ok {
-		v.PFBase, v.PFObs = num(baseline(e)), num(e.Observed)
+		v.PFBase, v.PFObs = ratio(baseline(e)), ratio(e.Observed)
 	}
 	if e, ok := byMetric["hourly_pattern"]; ok {
-		v.PatternCorr = fmt.Sprintf("%.2f", e.Observed)
+		v.PatternCorr = ratio(e.Observed)
 	}
 	if e, ok := byMetric["voltage_jumps"]; ok {
 		v.VJumps = whole(e.Observed)

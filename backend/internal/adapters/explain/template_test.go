@@ -200,3 +200,24 @@ func TestUnknownActionCodeStillRendersText(t *testing.T) {
 		t.Fatal("an unknown action code must fall back to a generic text")
 	}
 }
+
+func TestPowerFactorRendersWithTwoDecimals(t *testing.T) {
+	a := anomalies()[domain.ActionInspectLoadIncrease]
+	for i, e := range a.Evidence {
+		if e.Metric == "power_factor" {
+			a.Evidence[i] = ev("power_factor", 0.94, 0.74, -21.3, "")
+		}
+	}
+	x := New()
+	for name, got := range map[string]string{"reason": x.Reason(a), "action": x.Action(a)} {
+		for _, want := range []string{"0.94", "0.74"} {
+			if !strings.Contains(got, want) {
+				t.Errorf("%s lacks %q: %s", name, want, got)
+			}
+		}
+	}
+	// Other electrical values keep one decimal.
+	if r := x.Reason(a); !strings.Contains(r, "42.0 kWh/h") {
+		t.Errorf("consumption must keep one decimal: %s", r)
+	}
+}
