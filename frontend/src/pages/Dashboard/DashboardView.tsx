@@ -1,12 +1,12 @@
-import type { DashboardSummary } from '../../api/types'
-import { Button } from '../../components/atoms/Button'
+import type { Analysis, DashboardSummary } from '../../api/types'
 import { EmptyState } from '../../components/atoms/EmptyState'
 import { ErrorState } from '../../components/atoms/ErrorState'
 import { ActivityIcon, AlertIcon, ClockIcon, GaugeIcon, SparklesIcon, TargetIcon } from '../../components/atoms/Icon'
 import { Skeleton } from '../../components/atoms/Skeleton'
-import { Spinner } from '../../components/atoms/Spinner'
 import { ConfidenceMeter } from '../../components/molecules/ConfidenceMeter'
 import { KpiCard } from '../../components/molecules/KpiCard'
+import { RunAnalysisButton } from '../../components/molecules/RunAnalysisButton'
+import { RunAnalysisFeedback } from '../../components/organisms/RunAnalysisFeedback'
 import { formatDateTime, formatKwh } from '../../lib/format'
 
 export interface DashboardViewProps {
@@ -17,8 +17,10 @@ export interface DashboardViewProps {
   onRun: () => void
   /** The start request is in flight. */
   starting: boolean
-  /** The analysis was started and its results have not arrived yet. */
-  waiting: boolean
+  /** A run is starting or in flight: the trigger stays disabled. */
+  busy: boolean
+  /** The run started or resumed on this page, with its live progress. */
+  analysis?: Analysis
   /** Why the last start attempt failed, if it did. */
   runError: string | null
 }
@@ -39,13 +41,8 @@ function LoadingSkeleton() {
   )
 }
 
-function RunButton({ onRun, starting }: Pick<DashboardViewProps, 'onRun' | 'starting'>) {
-  return (
-    <Button variant="accent" onClick={onRun} loading={starting}>
-      <SparklesIcon width={16} height={16} />
-      Run AI Analysis
-    </Button>
-  )
+function RunButton({ onRun, starting, busy, analysis }: Pick<DashboardViewProps, 'onRun' | 'starting' | 'busy' | 'analysis'>) {
+  return <RunAnalysisButton onRun={onRun} starting={starting} busy={busy} progress={analysis?.progress} />
 }
 
 function Kpis({ summary }: { summary: DashboardSummary }) {
@@ -93,7 +90,7 @@ function SummaryBanner({ summary }: { summary: DashboardSummary }) {
   )
 }
 
-export function DashboardView({ state, summary, errorMessage, onRetry, onRun, starting, waiting, runError }: DashboardViewProps) {
+export function DashboardView({ state, summary, errorMessage, onRetry, onRun, starting, busy, analysis, runError }: DashboardViewProps) {
   const needsFirstRun = state === 'ready' && summary?.last_analysis === null
   return (
     <div className="flex flex-col gap-6">
@@ -102,33 +99,24 @@ export function DashboardView({ state, summary, errorMessage, onRetry, onRun, st
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
           <p className="mt-1 text-sm text-muted">Fleet consumption and the latest AI anomaly analysis.</p>
         </div>
-        {state === 'ready' && !needsFirstRun && <RunButton onRun={onRun} starting={starting} />}
+        {state === 'ready' && !needsFirstRun && <RunButton onRun={onRun} starting={starting} busy={busy} analysis={analysis} />}
       </div>
 
-      {runError && (
-        <p role="alert" className="rounded-lg bg-sev-high/10 px-4 py-3 text-sm font-medium text-sev-high-ink">
-          Could not start the analysis: {runError}
-        </p>
-      )}
-      {waiting && (
-        <p className="flex items-center gap-2.5 rounded-lg bg-primary/10 px-4 py-3 text-sm font-medium text-primary-strong">
-          <Spinner size="sm" label="Analysis running" />
-          Analysis started. Results appear here as soon as it finishes.
-        </p>
-      )}
+      <RunAnalysisFeedback analysis={analysis} runError={runError} onRetry={onRun} />
 
       {state === 'loading' && <LoadingSkeleton />}
       {state === 'error' && <ErrorState title="Could not load the dashboard" message={errorMessage ?? 'Unknown error'} onRetry={onRetry} />}
       {state === 'ready' && summary && (
         <>
-          <SummaryBanner summary={summary} />
+          {/* The finished run's panel already carries this headline. */}
+          {analysis?.status !== 'done' && <SummaryBanner summary={summary} />}
           <Kpis summary={summary} />
           {needsFirstRun && (
             <EmptyState
               icon={<SparklesIcon width={24} height={24} />}
               title="No analysis yet"
               description={`Run the AI analysis to detect consumption anomalies across ${summary.meters_count} meters and get a recommended action for each one.`}
-              action={<RunButton onRun={onRun} starting={starting} />}
+              action={<RunButton onRun={onRun} starting={starting} busy={busy} analysis={analysis} />}
             />
           )}
         </>

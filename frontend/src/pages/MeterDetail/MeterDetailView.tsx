@@ -1,15 +1,15 @@
 import { Link } from 'react-router-dom'
-import type { MeterDetail, MeterEvent, ReadingPoint } from '../../api/types'
-import { Button } from '../../components/atoms/Button'
+import type { Analysis, MeterDetail, MeterEvent, ReadingPoint } from '../../api/types'
 import { EmptyState } from '../../components/atoms/EmptyState'
 import { ErrorState } from '../../components/atoms/ErrorState'
-import { AlertIcon, ActivityIcon, BoltIcon, GaugeIcon, SparklesIcon } from '../../components/atoms/Icon'
+import { AlertIcon, ActivityIcon, BoltIcon, GaugeIcon } from '../../components/atoms/Icon'
 import { Skeleton } from '../../components/atoms/Skeleton'
-import { Spinner } from '../../components/atoms/Spinner'
 import { KpiCard } from '../../components/molecules/KpiCard'
+import { RunAnalysisButton } from '../../components/molecules/RunAnalysisButton'
 import { StatusPill } from '../../components/molecules/StatusPill'
 import { ChartGrid } from '../../components/organisms/ChartGrid'
 import { EventTimeline } from '../../components/organisms/EventTimeline'
+import { RunAnalysisFeedback } from '../../components/organisms/RunAnalysisFeedback'
 import { latestDayTotals } from '../../lib/chartData'
 import { formatDateTime, formatKwh, formatSignedPercent } from '../../lib/format'
 import { variationTone } from '../../lib/status'
@@ -27,7 +27,10 @@ export interface MeterDetailViewProps {
   onRetry: () => void
   onRun: () => void
   starting: boolean
-  waiting: boolean
+  /** A run is starting or in flight: the trigger stays disabled. */
+  busy: boolean
+  /** The run started or resumed on this page, with its live progress. */
+  analysis?: Analysis
   runError: string | null
 }
 
@@ -71,7 +74,7 @@ function Summary({ meter, readings }: { meter: MeterDetail; readings: SectionSta
   )
 }
 
-export function MeterDetailView({ meterId, state, meter, errorMessage, readings, events, onRetry, onRun, starting, waiting, runError }: MeterDetailViewProps) {
+export function MeterDetailView({ meterId, state, meter, errorMessage, readings, events, onRetry, onRun, starting, busy, analysis, runError }: MeterDetailViewProps) {
   if (state === 'not-found') {
     return (
       <EmptyState
@@ -99,25 +102,10 @@ export function MeterDetailView({ meterId, state, meter, errorMessage, readings,
             {meter && <StatusPill status={meter.status} />}
           </div>
         </div>
-        {state === 'ready' && (
-          <Button variant="accent" onClick={onRun} loading={starting}>
-            <SparklesIcon width={16} height={16} />
-            Run AI Analysis
-          </Button>
-        )}
+        {state === 'ready' && <RunAnalysisButton onRun={onRun} starting={starting} busy={busy} progress={analysis?.progress} />}
       </div>
 
-      {runError && (
-        <p role="alert" className="rounded-lg bg-sev-high/10 px-4 py-3 text-sm font-medium text-sev-high-ink">
-          Could not start the analysis: {runError}
-        </p>
-      )}
-      {waiting && (
-        <p className="flex items-center gap-2.5 rounded-lg bg-primary/10 px-4 py-3 text-sm font-medium text-primary-strong">
-          <Spinner size="sm" label="Analysis running" />
-          Analysis started. This meter updates as soon as it finishes.
-        </p>
-      )}
+      <RunAnalysisFeedback analysis={analysis} runError={runError} onRetry={onRun} />
 
       {state === 'loading' && <Loading label="Loading meter" className="h-32" />}
       {state === 'error' && <ErrorState title="Could not load the meter" message={errorMessage ?? 'Unknown error'} onRetry={onRetry} />}

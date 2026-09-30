@@ -4,7 +4,7 @@ import type { ReactElement } from 'react'
 import { cloneElement } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { setToken } from '../../api/token'
-import type { DashboardSummary, MeterDetail, MeterEvent, ReadingPoint } from '../../api/types'
+import type { Analysis, MeterDetail, MeterEvent, ReadingPoint } from '../../api/types'
 import { AppProviders } from '../../app/providers'
 import { routerFuture } from '../../app/router'
 import { createTestQueryClient, jsonResponse } from '../../test/utils'
@@ -36,17 +36,27 @@ const readings: ReadingPoint[] = Array.from({ length: 48 }, (_, i) => ({
 }))
 const events: MeterEvent[] = [{ id: 1, timestamp: '2026-09-12T14:00:00Z', type: 'UNKNOWN', description: 'Unexplained rise' }]
 
-const pristine: DashboardSummary = {
-  meters_count: 12, total_kwh: 1, anomalies_count: 0, high_priority_count: 0, aggregate_confidence: null, last_analysis: null, summary_text: null,
+const runningAnalysis: Analysis = {
+  id: 'a-1',
+  status: 'running',
+  stage: 'baseline',
+  stage_index: 2,
+  stage_total: 7,
+  progress: 14,
+  created_at: '2026-09-30T10:00:00Z',
+  started_at: '2026-09-30T10:00:01Z',
+  finished_at: null,
+  error: '',
+  summary: null,
 }
-const analyzed: DashboardSummary = { ...pristine, last_analysis: { id: 'a-1', status: 'done', finished_at: '2026-09-30T10:15:00Z' } }
 
 /** Answers by "METHOD path"; lists answer successive calls in order (the last repeats). */
 function mockApi(routes: Record<string, Array<Response | Error>>) {
   const counters: Record<string, number> = {}
   fetchMock.mockImplementation(async (input, init) => {
     const key = `${init?.method ?? 'GET'} ${String(input)}`
-    const route = routes[key]
+    // No analysis in flight unless a test says otherwise.
+    const route = routes[key] ?? (key === 'GET /api/ai/analysis/latest' ? [jsonResponse(204)] : undefined)
     if (!route) throw new Error(`unexpected request ${key}`)
     const i = counters[key] ?? 0
     counters[key] = i + 1
@@ -104,7 +114,7 @@ describe('MeterDetailPage', () => {
     })
     renderAt('/meters/M-109')
     // All three requests go out before any answer is awaited by the UI.
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+    await waitFor(() => expect(fetchMock.mock.calls.filter(([url]) => String(url).startsWith('/api/meters'))).toHaveLength(3))
   })
 
   it('shows not-found for an unknown meter', async () => {
@@ -133,11 +143,14 @@ describe('MeterDetailPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('readings down')
   })
 
-  it('runs the analysis and refreshes the meter when it finishes', async () => {
+  it('runs the analysis, shows its progress and refreshes the meter when it finishes', async () => {
     mockApi({
       ...happy(),
-      'GET /api/dashboard/summary': [jsonResponse(200, pristine), jsonResponse(200, analyzed)],
       'POST /api/ai/analyze': [jsonResponse(202, { id: 'a-1' })],
+      'GET /api/ai/analysis/a-1': [
+        jsonResponse(200, runningAnalysis),
+        jsonResponse(200, { ...runningAnalysis, status: 'done', stage: 'recommendation', stage_index: 7, progress: 100, summary: { total: 1, priority_attention: 1, meters_analyzed: 12, by_type: {}, by_severity: {}, avg_confidence: 0.9, text: '1 anomaly detected · 1 requires priority attention' } }),
+      ],
     })
     renderAt('/meters/M-109')
     await screen.findByRole('group', { name: 'Total consumption' })
@@ -145,7 +158,22 @@ describe('MeterDetailPage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Run AI Analysis' }))
 
+    expect(await screen.findByRole('progressbar', { name: 'Analysis progress' })).toHaveAttribute('aria-valuenow', '14')
+    expect(await screen.findByText('1 anomaly detected · 1 requires priority attention')).toBeInTheDocument()
     expect(calls('POST /api/ai/analyze')).toBe(1)
     await waitFor(() => expect(calls('GET /api/meters/M-109')).toBe(2))
+  })
+
+  it('resumes a run in flight when the page opens', async () => {
+    mockApi({
+      ...happy(),
+      'GET /api/ai/analysis/latest': [jsonResponse(200, runningAnalysis)],
+      'GET /api/ai/analysis/a-1': [jsonResponse(200, runningAnalysis)],
+    })
+    renderAt('/meters/M-109')
+
+    expect(await screen.findByRole('progressbar', { name: 'Analysis progress' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Analyzing/ })).toBeDisabled()
+    expect(calls('POST /api/ai/analyze')).toBe(0)
   })
 })

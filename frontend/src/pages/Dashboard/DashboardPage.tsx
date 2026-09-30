@@ -1,5 +1,6 @@
 import { ApiError } from '../../api/client'
-import { useRunAnalysis } from '../../hooks/useRunAnalysis'
+import { useAnalysisJob } from '../../hooks/useAnalysisJob'
+import { useDashboard } from '../../hooks/useDashboard'
 import { DashboardView } from './DashboardView'
 
 function describe(error: unknown): string {
@@ -7,7 +8,8 @@ function describe(error: unknown): string {
 }
 
 export function DashboardPage() {
-  const { dashboard, start, starting, waiting, error } = useRunAnalysis({ observeDashboard: true })
+  const dashboard = useDashboard()
+  const job = useAnalysisJob()
 
   return (
     <DashboardView
@@ -15,10 +17,11 @@ export function DashboardPage() {
       summary={dashboard.data}
       errorMessage={dashboard.isError ? describe(dashboard.error) : undefined}
       onRetry={() => void dashboard.refetch()}
-      onRun={start}
-      starting={starting}
-      waiting={waiting}
-      runError={error ? describe(error) : null}
+      onRun={job.start}
+      starting={job.starting}
+      busy={job.active}
+      analysis={job.analysis}
+      runError={job.error ? describe(job.error) : null}
     />
   )
 }

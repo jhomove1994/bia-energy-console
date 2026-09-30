@@ -1,8 +1,8 @@
 import { useParams } from 'react-router-dom'
 import { ApiError } from '../../api/client'
+import { useAnalysisJob } from '../../hooks/useAnalysisJob'
 import { useMeterEvents, useMeterReadings } from '../../hooks/useMeterReadings'
 import { useMeter } from '../../hooks/useMeters'
-import { useRunAnalysis } from '../../hooks/useRunAnalysis'
 import { MeterDetailView, type SectionState } from './MeterDetailView'
 
 function describe(error: unknown): string {
@@ -21,7 +21,7 @@ export function MeterDetailPage() {
   const meter = useMeter(meterId)
   const readings = useMeterReadings(meterId)
   const events = useMeterEvents(meterId)
-  const run = useRunAnalysis({ observeDashboard: false })
+  const job = useAnalysisJob()
 
   const notFound = meter.error instanceof ApiError && meter.error.status === 404
 
@@ -38,10 +38,11 @@ export function MeterDetailPage() {
         if (readings.isError) void readings.refetch()
         if (events.isError) void events.refetch()
       }}
-      onRun={run.start}
-      starting={run.starting}
-      waiting={run.waiting}
-      runError={run.error ? describe(run.error) : null}
+      onRun={job.start}
+      starting={job.starting}
+      busy={job.active}
+      analysis={job.analysis}
+      runError={job.error ? describe(job.error) : null}
     />
   )
 }

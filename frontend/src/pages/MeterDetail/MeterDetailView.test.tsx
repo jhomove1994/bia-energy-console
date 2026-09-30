@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import type { ReactElement } from 'react'
 import { cloneElement } from 'react'
 import { MemoryRouter } from 'react-router-dom'
-import type { MeterDetail, MeterEvent, ReadingPoint } from '../../api/types'
+import type { Analysis, MeterDetail, MeterEvent, ReadingPoint } from '../../api/types'
 import { routerFuture } from '../../app/router'
 import { MeterDetailView, type MeterDetailViewProps } from './MeterDetailView'
 
@@ -39,6 +39,20 @@ const readings: ReadingPoint[] = Array.from({ length: 24 }, (_, i) => ({
   baseline_power_factor: 0.95,
 }))
 
+const runningAnalysis: Analysis = {
+  id: 'a-1',
+  status: 'running',
+  stage: 'detection',
+  stage_index: 3,
+  stage_total: 7,
+  progress: 28,
+  created_at: '2026-09-30T10:00:00Z',
+  started_at: '2026-09-30T10:00:01Z',
+  finished_at: null,
+  error: '',
+  summary: null,
+}
+
 const events: MeterEvent[] = [{ id: 1, timestamp: '2026-09-12T14:00:00Z', type: 'UNKNOWN', description: 'Unexplained rise' }]
 
 function setup(overrides: Partial<MeterDetailViewProps> = {}) {
@@ -51,7 +65,7 @@ function setup(overrides: Partial<MeterDetailViewProps> = {}) {
     onRetry: vi.fn(),
     onRun: vi.fn(),
     starting: false,
-    waiting: false,
+    busy: false,
     runError: null,
     ...overrides,
   }
@@ -120,9 +134,20 @@ describe('MeterDetailView', () => {
     expect(props.onRun).toHaveBeenCalled()
   })
 
-  it('reports a failed start and an analysis in flight', () => {
-    setup({ runError: 'busy', waiting: true })
+  it('reports a failed start', () => {
+    setup({ runError: 'busy' })
     expect(screen.getByRole('alert')).toHaveTextContent('Could not start the analysis: busy')
-    expect(screen.getByText(/Analysis started/)).toBeInTheDocument()
+  })
+
+  it('shows the live progress panel and disables the trigger while a run is active', () => {
+    setup({ busy: true, analysis: runningAnalysis })
+    expect(screen.getByRole('region', { name: 'AI analysis' })).toBeInTheDocument()
+    expect(screen.getByRole('progressbar', { name: 'Analysis progress' })).toHaveAttribute('aria-valuenow', '28')
+    expect(screen.getByRole('button', { name: /Analyzing/ })).toBeDisabled()
+  })
+
+  it('shows no panel before any run', () => {
+    setup()
+    expect(screen.queryByRole('region', { name: 'AI analysis' })).not.toBeInTheDocument()
   })
 })
