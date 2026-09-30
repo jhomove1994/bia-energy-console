@@ -1,4 +1,5 @@
-import { typeLabel, typeToken, type AnomalyType } from '../../lib/status'
+import { typeLabel } from '../../lib/labels'
+import { typeToken, type AnomalyType } from '../../lib/status'
 import { Badge } from '../atoms/Badge'
 
 export function TypeBadge({ type }: { type: AnomalyType }) {

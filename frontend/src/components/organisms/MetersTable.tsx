@@ -16,16 +16,16 @@ export function MetersTable({ rows }: { rows: MeterRow[] }) {
         <thead className="border-b border-border bg-bg/60">
           <tr>
             <th scope="col" className={th}>
-              Meter
+              Medidor
             </th>
             <th scope="col" className={thRight}>
-              Total consumption
+              Consumo total
             </th>
             <th scope="col" className={thRight}>
-              Daily variation
+              Variación diaria
             </th>
             <th scope="col" className={th}>
-              Status
+              Estado
             </th>
           </tr>
         </thead>

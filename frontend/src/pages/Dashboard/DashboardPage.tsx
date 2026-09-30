@@ -4,7 +4,7 @@ import { useDashboard } from '../../hooks/useDashboard'
 import { DashboardView } from './DashboardView'
 
 function describe(error: unknown): string {
-  return error instanceof ApiError ? error.message : 'Unexpected error'
+  return error instanceof ApiError ? error.message : 'Error inesperado'
 }
 
 export function DashboardPage() {

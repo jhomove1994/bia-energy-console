@@ -14,7 +14,7 @@ export function RunAnalysisFeedback({ analysis, runError, onRetry }: RunAnalysis
     <>
       {runError && (
         <p role="alert" className="rounded-lg bg-sev-high/10 px-4 py-3 text-sm font-medium text-sev-high-ink">
-          Could not start the analysis: {runError}
+          No se pudo iniciar el análisis: {runError}
         </p>
       )}
       {analysis && <AnalysisProgressPanel analysis={analysis} onRetry={onRetry} />}

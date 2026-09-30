@@ -1,4 +1,5 @@
 import { Input } from '../atoms/Input'
+import { statusLabel } from '../../lib/labels'
 import { Select, type SelectOption } from '../atoms/Select'
 
 export interface SearchFilterBarProps {
@@ -13,19 +14,19 @@ export interface SearchFilterBarProps {
 }
 
 export const statusOptions: SelectOption[] = [
-  { value: '', label: 'All statuses' },
-  { value: 'OK', label: 'OK' },
-  { value: 'Alert', label: 'Alert' },
-  { value: 'Critical', label: 'Critical' },
+  { value: '', label: 'Todos los estados' },
+  { value: 'OK', label: statusLabel('OK') },
+  { value: 'Alert', label: statusLabel('Alert') },
+  { value: 'Critical', label: statusLabel('Critical') },
 ]
 
 export const sortOptions: SelectOption[] = [
-  { value: 'meter_id:asc', label: 'Meter id (A to Z)' },
-  { value: 'variation:desc', label: 'Variation (highest first)' },
-  { value: 'variation:asc', label: 'Variation (lowest first)' },
-  { value: 'kwh:desc', label: 'Consumption (highest first)' },
-  { value: 'kwh:asc', label: 'Consumption (lowest first)' },
-  { value: 'status:desc', label: 'Status (most severe first)' },
+  { value: 'meter_id:asc', label: 'ID del medidor (A a Z)' },
+  { value: 'variation:desc', label: 'Variación (mayor primero)' },
+  { value: 'variation:asc', label: 'Variación (menor primero)' },
+  { value: 'kwh:desc', label: 'Consumo (mayor primero)' },
+  { value: 'kwh:asc', label: 'Consumo (menor primero)' },
+  { value: 'status:desc', label: 'Estado (más grave primero)' },
 ]
 
 export function SearchFilterBar({ query, status, sort, onQueryChange, onStatusChange, onSortChange }: SearchFilterBarProps) {
@@ -34,14 +35,14 @@ export function SearchFilterBar({ query, status, sort, onQueryChange, onStatusCh
       <Input
         id="meter-search"
         type="search"
-        label="Search meters"
-        placeholder="Meter id, e.g. 109"
+        label="Buscar medidores"
+        placeholder="ID del medidor, p. ej. 109"
         autoComplete="off"
         value={query}
         onChange={(e) => onQueryChange(e.target.value)}
       />
-      <Select id="meter-status" label="Status" options={statusOptions} value={status} onChange={(e) => onStatusChange(e.target.value)} />
-      <Select id="meter-sort" label="Sort by" options={sortOptions} value={sort} onChange={(e) => onSortChange(e.target.value)} />
+      <Select id="meter-status" label="Estado" options={statusOptions} value={status} onChange={(e) => onStatusChange(e.target.value)} />
+      <Select id="meter-sort" label="Ordenar por" options={sortOptions} value={sort} onChange={(e) => onSortChange(e.target.value)} />
     </div>
   )
 }

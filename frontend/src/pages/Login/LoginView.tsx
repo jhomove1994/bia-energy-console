@@ -15,8 +15,8 @@ export function LoginView({ onSubmit, submitting, error }: LoginViewProps) {
   const [password, setPassword] = useState('')
   const [touched, setTouched] = useState(false)
 
-  const usernameError = touched && username.trim() === '' ? 'Enter your username' : undefined
-  const passwordError = touched && password === '' ? 'Enter your password' : undefined
+  const usernameError = touched && username.trim() === '' ? 'Ingrese su usuario' : undefined
+  const passwordError = touched && password === '' ? 'Ingrese su contraseña' : undefined
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -35,12 +35,12 @@ export function LoginView({ onSubmit, submitting, error }: LoginViewProps) {
           <span className="text-lg font-semibold tracking-tight">Energy Console</span>
         </div>
         <div className="max-w-md">
-          <h2 className="text-3xl font-semibold leading-tight tracking-tight">Find the meters that need attention, and why.</h2>
+          <h2 className="text-3xl font-semibold leading-tight tracking-tight">Encuentre los medidores que requieren atención y por qué.</h2>
           <p className="mt-4 text-base leading-relaxed text-sidebar-text">
-            Spot consumption anomalies, separate real faults from scheduled events, and get a clear next action for every meter.
+            Detecte anomalías de consumo, distinga las fallas reales de los eventos programados y obtenga una acción clara para cada medidor.
           </p>
         </div>
-        <p className="text-xs text-sidebar-text/60">AI energy management platform</p>
+        <p className="text-xs text-sidebar-text/60">Plataforma de gestión de energía con IA</p>
         <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
       </section>
 
@@ -52,8 +52,8 @@ export function LoginView({ onSubmit, submitting, error }: LoginViewProps) {
             </span>
             <span className="text-lg font-semibold tracking-tight">Energy Console</span>
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
-          <p className="mt-1.5 text-sm text-muted">Use your console account to continue.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Iniciar sesión</h1>
+          <p className="mt-1.5 text-sm text-muted">Use su cuenta de la consola para continuar.</p>
 
           <Card className="mt-6">
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
@@ -64,7 +64,7 @@ export function LoginView({ onSubmit, submitting, error }: LoginViewProps) {
               )}
               <Input
                 id="username"
-                label="Username"
+                label="Usuario"
                 autoComplete="username"
                 autoFocus
                 value={username}
@@ -73,7 +73,7 @@ export function LoginView({ onSubmit, submitting, error }: LoginViewProps) {
               />
               <Input
                 id="password"
-                label="Password"
+                label="Contraseña"
                 type="password"
                 autoComplete="current-password"
                 value={password}
@@ -81,13 +81,13 @@ export function LoginView({ onSubmit, submitting, error }: LoginViewProps) {
                 error={passwordError}
               />
               <Button type="submit" loading={submitting} className="mt-1 w-full">
-                Sign in
+                Iniciar sesión
               </Button>
             </form>
           </Card>
 
           <p className="mt-5 rounded-lg border border-dashed border-border px-3 py-2.5 text-center text-xs text-muted">
-            Demo access: <span className="tabular font-semibold text-text">admin / admin123</span>
+            Acceso de demostración: <span className="tabular font-semibold text-text">admin / admin123</span>
           </p>
         </div>
       </main>

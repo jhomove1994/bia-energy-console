@@ -16,7 +16,7 @@ const summary: DashboardSummary = {
   high_priority_count: 2,
   aggregate_confidence: 0.9,
   last_analysis: { id: 'a-1', status: 'done', finished_at: '2026-09-30T10:15:00Z' },
-  summary_text: '4 anomalies detected · 2 require priority attention',
+  summary_text: '4 anomalías detectadas · 2 requieren atención prioritaria',
 }
 
 function PathProbe() {
@@ -68,17 +68,17 @@ describe('app routes', () => {
   it('sends an anonymous visitor to the login page', () => {
     renderAt('/')
     expect(currentPath().textContent).toBe('/login')
-    expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
   })
 
   it('logs in and lands on the dashboard inside the app shell', async () => {
     renderAt('/login')
 
-    await userEvent.type(screen.getByLabelText('Username'), 'admin')
-    await userEvent.type(screen.getByLabelText('Password'), 'admin123')
-    await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    await userEvent.type(screen.getByLabelText('Usuario'), 'admin')
+    await userEvent.type(screen.getByLabelText('Contraseña'), 'admin123')
+    await userEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
 
-    expect(await screen.findByText('4 anomalies detected · 2 require priority attention')).toBeInTheDocument()
+    expect(await screen.findByText('4 anomalías detectadas · 2 requieren atención prioritaria')).toBeInTheDocument()
     expect(currentPath().textContent).toBe('/')
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByText('admin')).toBeInTheDocument()
@@ -86,14 +86,14 @@ describe('app routes', () => {
 
   it('returns to the login page after signing out', async () => {
     renderAt('/login')
-    await userEvent.type(screen.getByLabelText('Username'), 'admin')
-    await userEvent.type(screen.getByLabelText('Password'), 'admin123')
-    await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
-    await screen.findByText('4 anomalies detected · 2 require priority attention')
+    await userEvent.type(screen.getByLabelText('Usuario'), 'admin')
+    await userEvent.type(screen.getByLabelText('Contraseña'), 'admin123')
+    await userEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
+    await screen.findByText('4 anomalías detectadas · 2 requieren atención prioritaria')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
 
-    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
     expect(currentPath().textContent).toBe('/login')
   })
 
@@ -101,7 +101,7 @@ describe('app routes', () => {
     window.localStorage.setItem('energy.token', 'expired-token')
     renderAt('/')
 
-    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
     expect(currentPath().textContent).toBe('/login')
     expect(window.localStorage.getItem('energy.token')).toBeNull()
   })
@@ -109,7 +109,7 @@ describe('app routes', () => {
   it('redirects unknown paths to the dashboard', async () => {
     window.localStorage.setItem('energy.token', 'tok')
     renderAt('/nowhere')
-    expect(await screen.findByText('4 anomalies detected · 2 require priority attention')).toBeInTheDocument()
+    expect(await screen.findByText('4 anomalías detectadas · 2 requieren atención prioritaria')).toBeInTheDocument()
     expect(currentPath().textContent).toBe('/')
   })
 })
@@ -118,13 +118,13 @@ describe('meters routes', () => {
   it('opens the meters list from the sidebar and marks it as current', async () => {
     window.localStorage.setItem('energy.token', 'tok')
     renderAt('/')
-    await screen.findByText('4 anomalies detected · 2 require priority attention')
+    await screen.findByText('4 anomalías detectadas · 2 requieren atención prioritaria')
 
-    await userEvent.click(screen.getByRole('link', { name: 'Meters' }))
+    await userEvent.click(screen.getByRole('link', { name: 'Medidores' }))
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Meters' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Medidores' })).toBeInTheDocument()
     expect(currentPath().textContent).toBe('/meters')
-    expect(screen.getByRole('link', { name: 'Meters' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Medidores' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('link', { name: 'Dashboard' })).not.toHaveAttribute('aria-current')
   })
 
@@ -142,9 +142,9 @@ describe('meters routes', () => {
     await userEvent.click(await screen.findByRole('link', { name: 'M-109' }))
 
     expect(currentPath().textContent).toBe('/meters/M-109')
-    expect(await screen.findByText('Meter not found')).toBeInTheDocument()
+    expect(await screen.findByText('Medidor no encontrado')).toBeInTheDocument()
     // The shell keeps the Meters entry current on a detail page.
-    expect(screen.getByRole('link', { name: 'Meters' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Medidores' })).toHaveAttribute('aria-current', 'page')
   })
 })
 
@@ -152,24 +152,24 @@ describe('anomalies routes', () => {
   it('opens the anomalies list from the sidebar and marks it as current', async () => {
     window.localStorage.setItem('energy.token', 'tok')
     renderAt('/')
-    await screen.findByText('4 anomalies detected · 2 require priority attention')
+    await screen.findByText('4 anomalías detectadas · 2 requieren atención prioritaria')
 
-    await userEvent.click(screen.getByRole('link', { name: 'AI Anomalies' }))
+    await userEvent.click(screen.getByRole('link', { name: 'Anomalías IA' }))
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'AI Anomalies' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Anomalías IA' })).toBeInTheDocument()
     expect(currentPath().textContent).toBe('/anomalies')
-    expect(screen.getByRole('link', { name: 'AI Anomalies' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Anomalías IA' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('link', { name: 'Dashboard' })).not.toHaveAttribute('aria-current')
   })
 
-  it('opens an investigation from its row and keeps AI Anomalies current', async () => {
+  it('opens an investigation from its row and keeps Anomalías IA current', async () => {
     window.localStorage.setItem('energy.token', 'tok')
     renderAt('/anomalies')
 
-    await userEvent.click(await screen.findByRole('link', { name: 'Investigate M-112' }))
+    await userEvent.click(await screen.findByRole('link', { name: 'Investigar M-112' }))
 
     expect(currentPath().textContent).toBe('/anomalies/an-2')
     expect(await screen.findByRole('heading', { level: 1, name: /M-112/ })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'AI Anomalies', current: 'page' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Anomalías IA', current: 'page' })).toBeInTheDocument()
   })
 })

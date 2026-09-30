@@ -79,7 +79,7 @@ describe('InvestigationPage', () => {
     renderAt('/anomalies/an-1')
 
     expect(await screen.findByRole('heading', { level: 1, name: /M-109/ })).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Recommended action' })).toHaveTextContent('INSPECT_LOAD_INCREASE')
+    expect(screen.getByRole('region', { name: 'Acción recomendada' })).toHaveTextContent('INSPECT_LOAD_INCREASE')
     expect(await screen.findAllByRole('img')).toHaveLength(4)
     expect(calls('GET /api/meters/M-109/readings')).toBe(1)
   })
@@ -96,16 +96,16 @@ describe('InvestigationPage', () => {
     mockApi({ 'GET /api/anomalies/zzz': [jsonResponse(404, { error: { code: 'not_found', message: 'anomaly not found' } })] })
     renderAt('/anomalies/zzz')
 
-    expect(await screen.findByText('Anomaly not found')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Back to anomalies' })).toBeInTheDocument()
+    expect(await screen.findByText('Anomalía no encontrada')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Volver a anomalías' })).toBeInTheDocument()
   })
 
   it('shows the error with Retry and recovers', async () => {
     mockApi({ 'GET /api/anomalies/an-1': [new TypeError('Failed to fetch'), jsonResponse(200, makeAnomaly())], ...readingsOk })
     renderAt('/anomalies/an-1')
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Cannot reach the server')
-    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo conectar con el servidor')
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
     expect(await screen.findByRole('heading', { level: 1, name: /M-109/ })).toBeInTheDocument()
   })
 
@@ -116,9 +116,9 @@ describe('InvestigationPage', () => {
     })
     renderAt('/anomalies/an-1')
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('readings down')
-    expect(screen.getByRole('region', { name: 'Recommended action' })).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Ocurrió un error interno en el servidor')
+    expect(screen.getByRole('region', { name: 'Acción recomendada' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
     await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(4))
   })
 })

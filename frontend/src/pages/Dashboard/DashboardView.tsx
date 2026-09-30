@@ -29,7 +29,7 @@ const NOT_ANALYZED = <span className="text-muted">—</span>
 
 function LoadingSkeleton() {
   return (
-    <div role="status" aria-label="Loading dashboard" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div role="status" aria-label="Cargando dashboard" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {Array.from({ length: 6 }, (_, i) => (
         <div key={i} className="rounded-card border border-border bg-surface p-5 shadow-card">
           <Skeleton className="h-3 w-24" />
@@ -49,26 +49,26 @@ function Kpis({ summary }: { summary: DashboardSummary }) {
   const analyzed = summary.last_analysis !== null
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      <KpiCard label="Meters" value={summary.meters_count} caption="Monitored in the fleet" icon={<GaugeIcon />} />
-      <KpiCard label="Total consumption" value={formatKwh(summary.total_kwh)} caption="Across all readings" icon={<ActivityIcon />} />
+      <KpiCard label="Medidores" value={summary.meters_count} caption="Monitoreados en la flota" icon={<GaugeIcon />} />
+      <KpiCard label="Consumo total" value={formatKwh(summary.total_kwh)} caption="En todas las lecturas" icon={<ActivityIcon />} />
       <KpiCard
-        label="Anomalies"
+        label="Anomalías"
         value={analyzed ? summary.anomalies_count : NOT_ANALYZED}
-        caption={analyzed ? 'Detected in the latest analysis' : 'Not analyzed yet'}
+        caption={analyzed ? 'Detectadas en el último análisis' : 'Aún sin analizar'}
         icon={<AlertIcon />}
       />
       <KpiCard
-        label="High priority"
+        label="Alta prioridad"
         value={analyzed ? summary.high_priority_count : NOT_ANALYZED}
-        caption={analyzed ? 'Require priority attention' : 'Not analyzed yet'}
+        caption={analyzed ? 'Requieren atención prioritaria' : 'Aún sin analizar'}
         icon={<TargetIcon />}
       />
-      <KpiCard label="Aggregate confidence" value={<ConfidenceMeter value={summary.aggregate_confidence} size="lg" />} caption="Mean over detected anomalies" />
+      <KpiCard label="Confianza agregada" value={<ConfidenceMeter value={summary.aggregate_confidence} size="lg" />} caption="Promedio de las anomalías detectadas" />
       <KpiCard
-        label="Last analysis"
+        label="Último análisis"
         size="md"
-        value={summary.last_analysis ? formatDateTime(summary.last_analysis.finished_at) : 'Never'}
-        caption={summary.last_analysis ? 'Completed' : 'Run the analysis to get started'}
+        value={summary.last_analysis ? formatDateTime(summary.last_analysis.finished_at) : 'Nunca'}
+        caption={summary.last_analysis ? 'Completado' : 'Ejecute el análisis para comenzar'}
         icon={<ClockIcon />}
       />
     </div>
@@ -97,7 +97,7 @@ export function DashboardView({ state, summary, errorMessage, onRetry, onRun, st
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="mt-1 text-sm text-muted">Fleet consumption and the latest AI anomaly analysis.</p>
+          <p className="mt-1 text-sm text-muted">Consumo de la flota y último análisis de anomalías con IA.</p>
         </div>
         {state === 'ready' && !needsFirstRun && <RunButton onRun={onRun} starting={starting} busy={busy} analysis={analysis} />}
       </div>
@@ -105,7 +105,7 @@ export function DashboardView({ state, summary, errorMessage, onRetry, onRun, st
       <RunAnalysisFeedback analysis={analysis} runError={runError} onRetry={onRun} />
 
       {state === 'loading' && <LoadingSkeleton />}
-      {state === 'error' && <ErrorState title="Could not load the dashboard" message={errorMessage ?? 'Unknown error'} onRetry={onRetry} />}
+      {state === 'error' && <ErrorState title="No se pudo cargar el dashboard" message={errorMessage ?? 'Error desconocido'} onRetry={onRetry} />}
       {state === 'ready' && summary && (
         <>
           {/* The finished run's panel already carries this headline. */}
@@ -114,8 +114,8 @@ export function DashboardView({ state, summary, errorMessage, onRetry, onRun, st
           {needsFirstRun && (
             <EmptyState
               icon={<SparklesIcon width={24} height={24} />}
-              title="No analysis yet"
-              description={`Run the AI analysis to detect consumption anomalies across ${summary.meters_count} meters and get a recommended action for each one.`}
+              title="Aún no hay análisis"
+              description={`Ejecute el análisis con IA para detectar anomalías de consumo en ${summary.meters_count} medidores y obtener una acción recomendada para cada una.`}
               action={<RunButton onRun={onRun} starting={starting} busy={busy} analysis={analysis} />}
             />
           )}

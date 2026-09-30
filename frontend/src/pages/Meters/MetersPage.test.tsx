@@ -66,7 +66,7 @@ describe('MetersPage', () => {
   it('typing 109 leaves only M-109 and puts the search in the URL', async () => {
     renderAt('/meters')
     await screen.findByRole('link', { name: 'M-101' })
-    await userEvent.type(screen.getByRole('searchbox', { name: 'Search meters' }), '109')
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar medidores' }), '109')
 
     await waitFor(() => expect(screen.getAllByRole('row')).toHaveLength(2))
     expect(screen.getByRole('link', { name: 'M-109' })).toBeInTheDocument()
@@ -78,8 +78,8 @@ describe('MetersPage', () => {
     renderAt('/meters?status=Critical&sort=variation&order=desc')
     expect(await screen.findByRole('link', { name: 'M-109' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'M-101' })).not.toBeInTheDocument()
-    expect(screen.getByRole('combobox', { name: 'Status' })).toHaveValue('Critical')
-    expect(screen.getByRole('combobox', { name: 'Sort by' })).toHaveValue('variation:desc')
+    expect(screen.getByRole('combobox', { name: 'Estado' })).toHaveValue('Critical')
+    expect(screen.getByRole('combobox', { name: 'Ordenar por' })).toHaveValue('variation:desc')
     const params = requestedUrls()[0]!.searchParams
     expect(params.get('status')).toBe('Critical')
     expect(params.get('sort')).toBe('variation')
@@ -89,19 +89,19 @@ describe('MetersPage', () => {
   it('filters by status and sorts through the URL', async () => {
     renderAt('/meters')
     await screen.findByRole('link', { name: 'M-101' })
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Status' }), 'Alert')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Estado' }), 'Alert')
     await waitFor(() => expect(screen.getAllByRole('row')).toHaveLength(2))
     expect(screen.getByLabelText('location')).toHaveTextContent('status=Alert')
 
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Sort by' }), 'kwh:desc')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Ordenar por' }), 'kwh:desc')
     await waitFor(() => expect(requestedUrls().at(-1)!.searchParams.get('sort')).toBe('kwh'))
     expect(requestedUrls().at(-1)!.searchParams.get('order')).toBe('desc')
   })
 
   it('clears every filter from the empty state', async () => {
     renderAt('/meters?q=zzz')
-    expect(await screen.findByText('No meters match your filters')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+    expect(await screen.findByText('Ningún medidor coincide con los filtros')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Borrar filtros' }))
     expect(await screen.findByRole('link', { name: 'M-101' })).toBeInTheDocument()
     expect(screen.getByLabelText('location')).toHaveTextContent(/^\/meters$/)
   })
@@ -109,8 +109,8 @@ describe('MetersPage', () => {
   it('shows the error and recovers on retry', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(500, { error: { code: 'internal', message: 'boom' } }))
     renderAt('/meters')
-    expect(await screen.findByRole('alert')).toHaveTextContent('boom')
-    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Ocurrió un error interno en el servidor')
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
     expect(await screen.findByRole('link', { name: 'M-101' })).toBeInTheDocument()
   })
 })

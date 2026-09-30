@@ -24,7 +24,7 @@ export function Button({ variant = 'primary', loading = false, disabled, classNa
       aria-busy={loading || undefined}
       className={`inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors duration-fast ease-console disabled:cursor-not-allowed disabled:opacity-60 ${variants[variant]} ${className}`}
     >
-      {loading && <Spinner size="sm" label="Working" />}
+      {loading && <Spinner size="sm" label="Procesando" />}
       {children}
     </button>
   )

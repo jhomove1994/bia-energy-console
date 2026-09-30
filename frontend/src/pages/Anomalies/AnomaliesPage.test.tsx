@@ -58,7 +58,7 @@ describe('AnomaliesPage', () => {
     mockApi({ 'GET /api/anomalies': [jsonResponse(200, demoAnomalyList())] })
     renderAt('/anomalies')
 
-    expect(await screen.findByText('4 anomalies detected · 2 require priority attention')).toBeInTheDocument()
+    expect(await screen.findByText('4 anomalías detectadas · 2 requieren atención prioritaria')).toBeInTheDocument()
     expect(bodyRows().map((r) => within(r).getByRole('rowheader').textContent)).toEqual(['M-109', 'M-112', 'M-104', 'M-106'])
   })
 
@@ -70,8 +70,8 @@ describe('AnomaliesPage', () => {
 
     expect(await screen.findByRole('table')).toBeInTheDocument()
     expect(bodyRows()).toHaveLength(1)
-    expect(screen.getByLabelText('Type')).toHaveValue('REAL_ANOMALY')
-    expect(screen.getByLabelText('Severity')).toHaveValue('HIGH')
+    expect(screen.getByLabelText('Tipo')).toHaveValue('REAL_ANOMALY')
+    expect(screen.getByLabelText('Severidad')).toHaveValue('HIGH')
   })
 
   it('filters through the URL and refetches', async () => {
@@ -83,16 +83,16 @@ describe('AnomaliesPage', () => {
     renderAt('/anomalies')
     await screen.findByRole('table')
 
-    await userEvent.selectOptions(screen.getByLabelText('Type'), 'DATA_QUALITY')
+    await userEvent.selectOptions(screen.getByLabelText('Tipo'), 'DATA_QUALITY')
     await waitFor(() => expect(bodyRows()).toHaveLength(1))
     expect(location()).toHaveTextContent('/anomalies?type=DATA_QUALITY')
     expect(within(bodyRows()[0]!).getByRole('rowheader')).toHaveTextContent('M-112')
 
-    await userEvent.selectOptions(screen.getByLabelText('Severity'), 'LOW')
-    expect(await screen.findByText('No anomalies match these filters')).toBeInTheDocument()
+    await userEvent.selectOptions(screen.getByLabelText('Severidad'), 'LOW')
+    expect(await screen.findByText('Ninguna anomalía coincide con estos filtros')).toBeInTheDocument()
     expect(location()).toHaveTextContent('/anomalies?type=DATA_QUALITY&severity=LOW')
 
-    await userEvent.click(screen.getAllByRole('button', { name: 'Clear filters' })[0]!)
+    await userEvent.click(screen.getAllByRole('button', { name: 'Borrar filtros' })[0]!)
     await waitFor(() => expect(bodyRows()).toHaveLength(4))
     expect(location()).toHaveTextContent(/^\/anomalies$/)
   })
@@ -101,7 +101,7 @@ describe('AnomaliesPage', () => {
     mockApi({ 'GET /api/anomalies?meter_id=M-109': [jsonResponse(200, demoAnomalyList(demoAnomalies().slice(0, 1)))] })
     renderAt('/anomalies?meter_id=M-109')
 
-    expect(await screen.findByText('Meter M-109')).toBeInTheDocument()
+    expect(await screen.findByText('Medidor M-109')).toBeInTheDocument()
     expect(bodyRows()).toHaveLength(1)
   })
 
@@ -112,11 +112,11 @@ describe('AnomaliesPage', () => {
       'GET /api/ai/analysis/a-1': [jsonResponse(200, makeAnalysis()), jsonResponse(200, doneAnalysis())],
     })
     renderAt('/anomalies')
-    expect(await screen.findByText('No analysis yet')).toBeInTheDocument()
+    expect(await screen.findByText('Aún no hay análisis')).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Run AI Analysis' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Ejecutar análisis IA' }))
 
-    expect(await screen.findByRole('region', { name: 'AI analysis' })).toBeInTheDocument()
+    expect(await screen.findByRole('region', { name: 'Análisis con IA' })).toBeInTheDocument()
     expect(await screen.findByRole('table', {}, { timeout: 3000 })).toBeInTheDocument()
     expect(bodyRows()).toHaveLength(4)
     expect(calls('POST /api/ai/analyze')).toBe(1)
@@ -126,8 +126,8 @@ describe('AnomaliesPage', () => {
     mockApi({ 'GET /api/anomalies': [new TypeError('Failed to fetch'), jsonResponse(200, demoAnomalyList())] })
     renderAt('/anomalies')
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Cannot reach the server')
-    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo conectar con el servidor')
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
 
     expect(await screen.findByRole('table')).toBeInTheDocument()
   })

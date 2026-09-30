@@ -18,7 +18,7 @@ describe('AnomaliesTable', () => {
   it('has labelled column headers', () => {
     renderTable()
     const headers = screen.getAllByRole('columnheader').map((h) => h.textContent)
-    expect(headers).toEqual(['Priority', 'Meter', 'Anomaly', 'Type', 'Severity', 'Confidence', 'Detected window', 'Recommended action', 'Investigate'])
+    expect(headers).toEqual(['Prioridad', 'Medidor', 'Anomalía', 'Tipo', 'Severidad', 'Confianza', 'Ventana detectada', 'Acción recomendada', 'Investigar'])
   })
 
   it('lists the anomalies in the order given, ranked by priority', () => {
@@ -32,29 +32,29 @@ describe('AnomaliesTable', () => {
   it('shows type, severity, confidence, window and a short recommended action per row', () => {
     renderTable()
     const first = within(bodyRows()[0]!)
-    expect(first.getByText('Real anomaly')).toBeInTheDocument()
-    expect(first.getByText('High')).toBeInTheDocument()
+    expect(first.getByText('Anomalía real')).toBeInTheDocument()
+    expect(first.getByText('Alta')).toBeInTheDocument()
     expect(first.getByText('98%')).toBeInTheDocument()
-    expect(first.getByText('Level shift up')).toBeInTheDocument()
-    expect(first.getByText('12 Sep 2026, 14:00 UTC – 14 Sep 2026, 23:00 UTC')).toBeInTheDocument()
-    expect(first.getByText('Inspect load increase')).toBeInTheDocument()
+    expect(first.getByText('Cambio de nivel al alza')).toBeInTheDocument()
+    expect(first.getByText('12 sept 2026, 14:00 UTC – 14 sept 2026, 23:00 UTC')).toBeInTheDocument()
+    expect(first.getByText('Inspeccionar aumento de carga')).toBeInTheDocument()
 
     const last = within(bodyRows()[3]!)
-    expect(last.getByText('False positive')).toBeInTheDocument()
-    expect(last.getByText('Low')).toBeInTheDocument()
-    expect(last.getByText('Acknowledge as expected')).toBeInTheDocument()
+    expect(last.getByText('Falso positivo')).toBeInTheDocument()
+    expect(last.getByText('Baja')).toBeInTheDocument()
+    expect(last.getByText('Reconocer como esperado')).toBeInTheDocument()
   })
 
   it('links every row to its investigation', () => {
     renderTable()
-    expect(screen.getByRole('link', { name: 'Investigate M-109' })).toHaveAttribute('href', '/anomalies/an-1')
-    expect(screen.getByRole('link', { name: 'Investigate M-106' })).toHaveAttribute('href', '/anomalies/an-4')
+    expect(screen.getByRole('link', { name: 'Investigar M-109' })).toHaveAttribute('href', '/anomalies/an-1')
+    expect(screen.getByRole('link', { name: 'Investigar M-106' })).toHaveAttribute('href', '/anomalies/an-4')
     expect(screen.getAllByRole('link')).toHaveLength(4)
   })
 
   it('can hide the meter column when the list belongs to one meter', () => {
     renderTable({ showMeter: false })
-    expect(screen.queryByRole('columnheader', { name: 'Meter' })).not.toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Investigate M-109' })).toBeInTheDocument()
+    expect(screen.queryByRole('columnheader', { name: 'Medidor' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Investigar M-109' })).toBeInTheDocument()
   })
 })

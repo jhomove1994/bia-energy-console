@@ -1,5 +1,6 @@
 import type { MeterEvent, ReadingPoint } from '../api/types'
 import { formatAxisNumber } from './format'
+import { eventLabel } from './labels'
 import { severityToken, type Severity, type SeverityToken } from './status'
 
 export type MetricKey = 'kwh' | 'voltage' | 'current' | 'pf'
@@ -20,10 +21,10 @@ export interface MetricConfig {
 
 /** The four charts of the meter detail, in reading order. */
 export const METRICS: readonly MetricConfig[] = [
-  { key: 'kwh', title: 'Consumption', unit: 'kWh', observed: 'consumption_kwh', baseline: 'baseline_kwh', decimals: 1, axis: { min: 0, max: 1 } },
-  { key: 'voltage', title: 'Voltage', unit: 'V', observed: 'voltage_v', baseline: 'baseline_voltage_v', decimals: 1, axis: { min: 0, max: 1 } },
-  { key: 'current', title: 'Current', unit: 'A', observed: 'current_a', baseline: 'baseline_current_a', decimals: 2, axis: { min: 0, max: 0 }, integerTicks: true },
-  { key: 'pf', title: 'Power factor', unit: 'PF', observed: 'power_factor', baseline: 'baseline_power_factor', decimals: 2, axis: { min: 2, max: 2 } },
+  { key: 'kwh', title: 'Consumo', unit: 'kWh', observed: 'consumption_kwh', baseline: 'baseline_kwh', decimals: 1, axis: { min: 0, max: 1 } },
+  { key: 'voltage', title: 'Voltaje', unit: 'V', observed: 'voltage_v', baseline: 'baseline_voltage_v', decimals: 1, axis: { min: 0, max: 1 } },
+  { key: 'current', title: 'Corriente', unit: 'A', observed: 'current_a', baseline: 'baseline_current_a', decimals: 2, axis: { min: 0, max: 0 }, integerTicks: true },
+  { key: 'pf', title: 'Factor de potencia', unit: 'FP', observed: 'power_factor', baseline: 'baseline_power_factor', decimals: 2, axis: { min: 2, max: 2 } },
 ]
 
 export const formatYTick = (metric: MetricConfig, value: number): string => formatAxisNumber(value, metric.axis.min, metric.axis.max)
@@ -73,12 +74,6 @@ export function toReferenceAreas(windows: AnomalyWindow[]): ReferenceAreaRange[]
 export interface ReferenceLineMarker {
   x: number
   label: string
-}
-
-/** "OPERATIONAL_CHANGE" to "Operational change". */
-export function eventLabel(type: string): string {
-  const text = type.replace(/_/g, ' ').toLowerCase()
-  return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
 export function toReferenceLines(events: MeterEvent[]): ReferenceLineMarker[] {

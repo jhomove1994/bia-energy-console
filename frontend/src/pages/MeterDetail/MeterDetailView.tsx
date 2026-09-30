@@ -13,6 +13,7 @@ import { EventTimeline } from '../../components/organisms/EventTimeline'
 import { RunAnalysisFeedback } from '../../components/organisms/RunAnalysisFeedback'
 import { latestDayTotals } from '../../lib/chartData'
 import { formatDateTime, formatKwh, formatSignedPercent } from '../../lib/format'
+import { kindLabel } from '../../lib/labels'
 import type { SectionState } from '../../lib/section'
 import { variationTone } from '../../lib/status'
 
@@ -53,28 +54,28 @@ function Summary({ meter, readings }: { meter: MeterDetail; readings: SectionSta
   const tone = variationTone(meter.variation_pct)
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <KpiCard label="Total consumption" value={formatKwh(meter.total_kwh)} caption={`Last reading ${formatDateTime(meter.last_reading_at)}`} icon={<ActivityIcon />} />
+      <KpiCard label="Consumo total" value={formatKwh(meter.total_kwh)} caption={`Última lectura ${formatDateTime(meter.last_reading_at)}`} icon={<ActivityIcon />} />
       <KpiCard
-        label="Daily variation"
+        label="Variación diaria"
         value={meter.variation_pct === null ? NO_DATA : <span className={variationText[tone]}>{formatSignedPercent(meter.variation_pct)}</span>}
-        caption={meter.variation_pct === null ? 'Not enough history for a baseline' : 'Latest day against the baseline'}
+        caption={meter.variation_pct === null ? 'No hay historial suficiente para un baseline' : 'Último día frente al baseline'}
         icon={<BoltIcon />}
       />
       <KpiCard
-        label="Latest 24 h"
+        label="Últimas 24 h"
         value={day ? formatKwh(day.observedKwh) : NO_DATA}
-        caption={day?.baselineKwh != null ? `Baseline ~${formatKwh(day.baselineKwh)}` : 'No baseline for this window'}
+        caption={day?.baselineKwh != null ? `Baseline ~${formatKwh(day.baselineKwh)}` : 'Sin baseline para esta ventana'}
         icon={<GaugeIcon />}
       />
       <KpiCard
-        label="Open findings"
+        label="Hallazgos abiertos"
         value={meter.anomaly_count}
         caption={
           meter.anomaly_count === 0 ? (
-            'None in the latest analysis'
+            'Ninguno en el último análisis'
           ) : (
             <Link to={`/anomalies?meter_id=${encodeURIComponent(meter.meter_id)}`} className="font-semibold text-primary-strong hover:underline">
-              View findings
+              Ver hallazgos
             </Link>
           )
         }
@@ -87,7 +88,7 @@ function Summary({ meter, readings }: { meter: MeterDetail; readings: SectionSta
 /** Anomaly windows for the charts; empty while the findings load or fail. */
 function windowsOf(anomalies: SectionState<Anomaly[]>) {
   if (anomalies.status !== 'ready') return []
-  return anomalies.data.map((a) => ({ start: a.window_start, end: a.window_end, severity: a.severity, label: a.anomaly }))
+  return anomalies.data.map((a) => ({ start: a.window_start, end: a.window_end, severity: a.severity, label: kindLabel(a.kind, a.anomaly) }))
 }
 
 export function MeterDetailView({ meterId, state, meter, errorMessage, readings, events, anomalies, onRetry, onRun, starting, busy, analysis, runError }: MeterDetailViewProps) {
@@ -95,11 +96,11 @@ export function MeterDetailView({ meterId, state, meter, errorMessage, readings,
     return (
       <EmptyState
         icon={<GaugeIcon width={24} height={24} />}
-        title="Meter not found"
-        description={`There is no meter with the id ${meterId}. Check the address or pick one from the list.`}
+        title="Medidor no encontrado"
+        description={`No existe un medidor con el ID ${meterId}. Revise la dirección o elija uno de la lista.`}
         action={
           <Link to="/meters" className="inline-flex h-10 items-center rounded-lg bg-primary-strong px-4 text-sm font-semibold text-white hover:bg-primary-strong/90">
-            Back to meters
+            Volver a medidores
           </Link>
         }
       />
@@ -113,10 +114,10 @@ export function MeterDetailView({ meterId, state, meter, errorMessage, readings,
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <Link to="/meters" className="text-sm font-medium text-primary-strong hover:underline">
-            Meters
+            Medidores
           </Link>
           <div className="mt-1 flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight">Meter {meterId}</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Medidor {meterId}</h1>
             {meter && <StatusPill status={meter.status} />}
           </div>
         </div>
@@ -125,35 +126,35 @@ export function MeterDetailView({ meterId, state, meter, errorMessage, readings,
 
       <RunAnalysisFeedback analysis={analysis} runError={runError} onRetry={onRun} />
 
-      {state === 'loading' && <Loading label="Loading meter" className="h-32" />}
-      {state === 'error' && <ErrorState title="Could not load the meter" message={errorMessage ?? 'Unknown error'} onRetry={onRetry} />}
+      {state === 'loading' && <Loading label="Cargando medidor" className="h-32" />}
+      {state === 'error' && <ErrorState title="No se pudo cargar el medidor" message={errorMessage ?? 'Error desconocido'} onRetry={onRetry} />}
       {state === 'ready' && meter && (
         <>
           <Summary meter={meter} readings={readings} />
 
           <section aria-labelledby="meter-anomalies-heading" className="flex flex-col gap-3">
             <h2 id="meter-anomalies-heading" className="text-base font-semibold text-text">
-              Anomalies for this meter
+              Anomalías de este medidor
             </h2>
-            {anomalies.status === 'loading' && <Loading label="Loading anomalies" className="h-24" />}
-            {anomalies.status === 'error' && <ErrorState title="Could not load the anomalies" message={anomalies.message} onRetry={onRetry} />}
+            {anomalies.status === 'loading' && <Loading label="Cargando anomalías" className="h-24" />}
+            {anomalies.status === 'error' && <ErrorState title="No se pudieron cargar las anomalías" message={anomalies.message} onRetry={onRetry} />}
             {anomalies.status === 'ready' && anomalies.data.length === 0 && (
-              <p className="rounded-card border border-border bg-surface px-5 py-4 text-sm text-muted shadow-card">No anomalies in the latest analysis for this meter.</p>
+              <p className="rounded-card border border-border bg-surface px-5 py-4 text-sm text-muted shadow-card">Sin anomalías en el último análisis para este medidor.</p>
             )}
             {anomalies.status === 'ready' && anomalies.data.length > 0 && <AnomaliesTable anomalies={anomalies.data} showMeter={false} />}
           </section>
 
           <section aria-labelledby="charts-heading" className="flex flex-col gap-3">
             <h2 id="charts-heading" className="text-base font-semibold text-text">
-              Readings against the baseline
+              Lecturas frente al baseline
             </h2>
-            {readings.status === 'loading' && <Loading label="Loading charts" className="h-72" />}
-            {readings.status === 'error' && <ErrorState title="Could not load the readings" message={readings.message} onRetry={onRetry} />}
+            {readings.status === 'loading' && <Loading label="Cargando gráficos" className="h-72" />}
+            {readings.status === 'error' && <ErrorState title="No se pudieron cargar las lecturas" message={readings.message} onRetry={onRetry} />}
             {readings.status === 'ready' && <ChartGrid readings={readings.data} events={events.status === 'ready' ? events.data : []} windows={windows} />}
           </section>
 
-          {events.status === 'loading' && <Loading label="Loading events" className="h-24" />}
-          {events.status === 'error' && <ErrorState title="Could not load the events" message={events.message} onRetry={onRetry} />}
+          {events.status === 'loading' && <Loading label="Cargando eventos" className="h-24" />}
+          {events.status === 'error' && <ErrorState title="No se pudieron cargar los eventos" message={events.message} onRetry={onRetry} />}
           {events.status === 'ready' && <EventTimeline events={events.data} />}
         </>
       )}

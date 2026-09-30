@@ -17,7 +17,7 @@ export function RunAnalysisButton({ onRun, starting, busy, progress }: RunAnalys
   return (
     <Button variant="accent" onClick={onRun} loading={starting} disabled={busy}>
       {!starting && <SparklesIcon width={16} height={16} />}
-      {running ? `Analyzing… ${progress ?? 0}%` : 'Run AI Analysis'}
+      {running ? `Analizando… ${progress ?? 0}%` : 'Ejecutar análisis IA'}
     </Button>
   )
 }

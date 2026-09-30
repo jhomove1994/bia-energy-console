@@ -1,15 +1,22 @@
+import { apiErrorMessage } from '../lib/labels'
 import { clearToken, getToken } from './token'
 
-/** Error raised for every failed request; `code` is the API error code, `network`, or `http_<status>`. */
+/**
+ * Error raised for every failed request; `code` is the API error code, `network`, or `http_<status>`.
+ * `message` is the user-facing Spanish text for that code; the server's own (English) message is
+ * kept in `detail` for diagnostics and never shown.
+ */
 export class ApiError extends Error {
   readonly status: number
   readonly code: string
+  readonly detail: string
 
-  constructor(status: number, code: string, message: string) {
-    super(message)
+  constructor(status: number, code: string, detail = '') {
+    super(apiErrorMessage(code, status))
     this.name = 'ApiError'
     this.status = status
     this.code = code
+    this.detail = detail
   }
 }
 
@@ -39,8 +46,7 @@ async function toApiError(res: Response): Promise<ApiError> {
     body = null
   }
   const code = body?.error?.code ?? `http_${res.status}`
-  const message = body?.error?.message ?? `Request failed with status ${res.status}`
-  return new ApiError(res.status, code, message)
+  return new ApiError(res.status, code, body?.error?.message ?? '')
 }
 
 export async function apiFetch<T = unknown>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -54,7 +60,7 @@ export async function apiFetch<T = unknown>(path: string, options: RequestOption
   try {
     res = await fetch(path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) })
   } catch {
-    throw new ApiError(0, 'network', 'Cannot reach the server. Check your connection and try again.')
+    throw new ApiError(0, 'network')
   }
 
   if (!res.ok) {

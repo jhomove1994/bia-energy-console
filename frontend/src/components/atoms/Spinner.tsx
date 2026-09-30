@@ -3,7 +3,7 @@ export interface SpinnerProps {
   label?: string
 }
 
-export function Spinner({ size = 'md', label = 'Loading' }: SpinnerProps) {
+export function Spinner({ size = 'md', label = 'Cargando' }: SpinnerProps) {
   const dimension = size === 'sm' ? 'h-4 w-4' : 'h-6 w-6'
   return (
     <span role="status" aria-label={label} className="inline-flex">

@@ -14,7 +14,7 @@ export function ConfidenceMeter({ value, size = 'md' }: ConfidenceMeterProps) {
     <div className="flex items-center gap-2.5">
       <div
         role="meter"
-        aria-label="Confidence"
+        aria-label="Confianza"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={percent}

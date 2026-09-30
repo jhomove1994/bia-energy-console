@@ -1,12 +1,16 @@
 const PLACEHOLDER = '—'
 
-const kwhFormat = new Intl.NumberFormat('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-const percentFormat = new Intl.NumberFormat('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-// Months come from en-US ("Sep"); en-GB abbreviates September as "Sept" in recent ICU builds.
-const monthFormat = new Intl.DateTimeFormat('en-US', { month: 'short', timeZone: 'UTC' })
-const timeFormat = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'UTC' })
+// Spanish (Colombia): decimal comma, dot as thousands separator, abbreviated months ("sept"), 24 h clock.
+const LOCALE = 'es-CO'
+const kwhFormat = new Intl.NumberFormat(LOCALE, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+const percentFormat = new Intl.NumberFormat(LOCALE, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+const monthFormat = new Intl.DateTimeFormat(LOCALE, { month: 'short', timeZone: 'UTC' })
+const timeFormat = new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'UTC' })
 
-const dateOf = (date: Date): string => `${date.getUTCDate()} ${monthFormat.format(date)} ${date.getUTCFullYear()}`
+// ICU appends a period to abbreviated months ("sept."); the copy spells them without it.
+const monthOf = (date: Date): string => monthFormat.format(date).replace('.', '')
+
+const dateOf = (date: Date): string => `${date.getUTCDate()} ${monthOf(date)} ${date.getUTCFullYear()}`
 
 export function formatKwh(value: number): string {
   return `${kwhFormat.format(value)} kWh`
@@ -37,11 +41,11 @@ export function formatDateTime(iso: string | null | undefined): string {
 /** Day and month (UTC) of an epoch-millisecond timestamp, for chart axis ticks. */
 export function formatAxisTick(ms: number): string {
   const date = new Date(ms)
-  return `${date.getUTCDate()} ${monthFormat.format(date)}`
+  return `${date.getUTCDate()} ${monthOf(date)}`
 }
 
 export function formatNumber(value: number, decimals: number): string {
-  return new Intl.NumberFormat('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value)
+  return new Intl.NumberFormat(LOCALE, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value)
 }
 
 const timeOf = (date: Date): string => timeFormat.format(date)
@@ -57,5 +61,5 @@ export function formatWindow(startIso: string, endIso: string): string {
 
 /** Axis tick: at least `minDecimals`, at most `maxDecimals` fraction digits. */
 export function formatAxisNumber(value: number, minDecimals: number, maxDecimals: number): string {
-  return new Intl.NumberFormat('en-US', { minimumFractionDigits: minDecimals, maximumFractionDigits: maxDecimals }).format(value)
+  return new Intl.NumberFormat(LOCALE, { minimumFractionDigits: minDecimals, maximumFractionDigits: maxDecimals }).format(value)
 }

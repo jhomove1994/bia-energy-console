@@ -7,26 +7,26 @@ const th = 'px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted'
 /** The numbers behind a finding: what was measured, what was expected, what was observed. The related event has its own card. */
 export function EvidenceTable({ items }: { items: EvidenceItem[] }) {
   const rows = items.filter((item) => item.metric !== 'event')
-  if (rows.length === 0) return <p className="text-sm text-muted">No numeric evidence was recorded for this finding.</p>
+  if (rows.length === 0) return <p className="text-sm text-muted">No se registró evidencia numérica para este hallazgo.</p>
   return (
     <Card padded={false} className="overflow-x-auto">
       <table className="w-full min-w-[32rem] border-collapse text-sm">
         <thead className="border-b border-border bg-bg/60">
           <tr>
             <th scope="col" className={`${th} text-left`}>
-              Metric
+              Métrica
             </th>
             <th scope="col" className={`${th} text-right`}>
               Baseline
             </th>
             <th scope="col" className={`${th} text-right`}>
-              Observed
+              Observado
             </th>
             <th scope="col" className={`${th} text-right`}>
               Delta
             </th>
             <th scope="col" className={`${th} text-left`}>
-              Unit
+              Unidad
             </th>
           </tr>
         </thead>

@@ -4,7 +4,7 @@ import { ApiError } from '../api/client'
 export type SectionState<T> = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; data: T }
 
 export function describeError(error: unknown): string {
-  return error instanceof ApiError ? error.message : 'Unexpected error'
+  return error instanceof ApiError ? error.message : 'Error inesperado'
 }
 
 export function toSection<T>(q: { isPending: boolean; isError: boolean; error: unknown; data: T | undefined }): SectionState<T> {

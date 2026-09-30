@@ -7,7 +7,7 @@ import { navItems } from './navigation'
 export function AppLayout() {
   const { username, logout } = useAuth()
   return (
-    <AppShell navItems={navItems} username={username ?? 'User'} onLogout={logout}>
+    <AppShell navItems={navItems} username={username ?? 'Usuario'} onLogout={logout}>
       <Outlet />
     </AppShell>
   )

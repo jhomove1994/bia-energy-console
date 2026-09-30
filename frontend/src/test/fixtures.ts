@@ -12,14 +12,14 @@ export function makeAnomaly(over: Partial<Anomaly> = {}): Anomaly {
     severity: 'HIGH',
     severity_score: 100,
     confidence: 0.975,
-    confidence_label: 'High',
+    confidence_label: 'Alta',
     priority_score: 97.5,
     priority_rank: 1,
     detected_at: '2026-09-12T14:00:00Z',
     window_start: '2026-09-12T14:00:00Z',
     window_end: '2026-09-14T23:00:00Z',
-    reason: 'Consumption stepped up 110% and stayed there; no logged event explains it.',
-    recommended_action: 'Dispatch an on-site inspection of M-109 within 24 h.',
+    reason: 'El consumo subió 110% y se mantiene; ningún evento registrado lo explica.',
+    recommended_action: 'Enviar una inspección en sitio a M-109 en un plazo de 24 h.',
     action_code: 'INSPECT_LOAD_INCREASE',
     status: 'open',
     related_event: null,
@@ -42,7 +42,7 @@ export function demoAnomalies(): Anomaly[] {
       confidence: 0.98,
       priority_rank: 2,
       action_code: 'OPEN_DQ_TICKET',
-      recommended_action: 'Open a metering data-quality ticket for M-112.',
+      recommended_action: 'Abrir un ticket de calidad de datos de medición para M-112.',
     }),
     makeAnomaly({
       id: 'an-3',
@@ -52,7 +52,7 @@ export function demoAnomalies(): Anomaly[] {
       confidence: 0.843,
       priority_rank: 3,
       action_code: 'UPDATE_BASELINE',
-      recommended_action: 'Confirm with operations that the change is permanent and rebaseline M-104.',
+      recommended_action: 'Confirmar con operaciones que el cambio es permanente y recalcular el baseline de M-104.',
     }),
     makeAnomaly({
       id: 'an-4',
@@ -64,13 +64,13 @@ export function demoAnomalies(): Anomaly[] {
       confidence: 0.858,
       priority_rank: 4,
       action_code: 'ACKNOWLEDGE_EXPECTED',
-      recommended_action: 'No action required.',
+      recommended_action: 'No se requiere acción.',
     }),
   ]
 }
 
 export function demoAnomalyList(items: Anomaly[] = demoAnomalies()): AnomalyList {
-  return { analysis_id: 'a-1', summary_text: '4 anomalies detected · 2 require priority attention', items }
+  return { analysis_id: 'a-1', summary_text: '4 anomalías detectadas · 2 requieren atención prioritaria', items }
 }
 
 export function makeAnalysis(over: Partial<Analysis> = {}): Analysis {
@@ -90,7 +90,7 @@ export function makeAnalysis(over: Partial<Analysis> = {}): Analysis {
   }
 }
 
-export function doneAnalysis(text = '4 anomalies detected · 2 require priority attention'): Analysis {
+export function doneAnalysis(text = '4 anomalías detectadas · 2 requieren atención prioritaria'): Analysis {
   return makeAnalysis({
     status: 'done',
     stage: 'recommendation',

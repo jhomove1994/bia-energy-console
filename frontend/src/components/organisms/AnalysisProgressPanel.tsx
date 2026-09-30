@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { Analysis, AnalysisStatus } from '../../api/types'
+import { analysisStatusLabel } from '../../lib/labels'
 import type { Tone } from '../../lib/tone'
 import { Badge } from '../atoms/Badge'
 import { Card } from '../atoms/Card'
@@ -14,14 +15,13 @@ export interface AnalysisProgressPanelProps {
 }
 
 const statusTone: Record<AnalysisStatus, Tone> = { pending: 'neutral', running: 'type-expl', done: 'status-ok', failed: 'sev-high' }
-const statusLabel: Record<AnalysisStatus, string> = { pending: 'Pending', running: 'Running', done: 'Done', failed: 'Failed' }
 
 /** What a screen reader hears when the run moves on: a short sentence that changes per stage, not per percent. */
 function announcement(a: Analysis): string {
-  if (a.status === 'done') return 'Analysis complete'
-  if (a.status === 'failed') return 'Analysis failed'
+  if (a.status === 'done') return 'Análisis completado'
+  if (a.status === 'failed') return 'El análisis falló'
   const name = STAGES[a.stage_index - 1]
-  return name ? `Stage ${a.stage_index} of ${a.stage_total}: ${name}` : 'Waiting to start'
+  return name ? `Etapa ${a.stage_index} de ${a.stage_total}: ${name}` : 'Esperando para iniciar'
 }
 
 /** Live view of one analysis run: status, stage stepper, progress, and the outcome (headline plus link, or the error). */
@@ -31,10 +31,10 @@ export function AnalysisProgressPanel({ analysis, onRetry }: AnalysisProgressPan
     <Card aria-labelledby="analysis-progress-heading" role="region" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="analysis-progress-heading" className="text-base font-semibold text-text">
-          AI analysis
+          Análisis con IA
         </h2>
         <Badge tone={statusTone[status]} dot>
-          {statusLabel[status]}
+          {analysisStatusLabel(status)}
         </Badge>
       </div>
 
@@ -47,7 +47,7 @@ export function AnalysisProgressPanel({ analysis, onRetry }: AnalysisProgressPan
           </p>
           <span className="tabular font-semibold text-text">{analysis.progress}%</span>
         </div>
-        <ProgressBar value={analysis.progress} label="Analysis progress" />
+        <ProgressBar value={analysis.progress} label="Progreso del análisis" />
       </div>
 
       {status === 'done' && analysis.summary && (
@@ -57,12 +57,12 @@ export function AnalysisProgressPanel({ analysis, onRetry }: AnalysisProgressPan
             to="/anomalies"
             className="inline-flex h-10 items-center rounded-lg bg-primary-strong px-4 text-sm font-semibold text-white transition-colors duration-fast ease-console hover:bg-primary-strong/90"
           >
-            View anomalies
+            Ver anomalías
           </Link>
         </div>
       )}
       {status === 'failed' && (
-        <ErrorState title="Analysis failed" message={analysis.error || 'The analysis failed without a reason. Try again.'} onRetry={onRetry} />
+        <ErrorState title="El análisis falló" message="El análisis no se pudo completar. Intente de nuevo." onRetry={onRetry} />
       )}
     </Card>
   )

@@ -38,27 +38,27 @@ const series = toChartSeries([reading(0, 40, 40), reading(1, 60, 40), reading(2,
 describe('MetricChart', () => {
   it('titles the chart with its unit and describes it with the key figures', () => {
     render(<MetricChart metric={kwh} series={series} />)
-    expect(screen.getByText('Consumption')).toBeInTheDocument()
-    expect(screen.getByRole('img', { name: /Consumption \(kWh\).*latest 92\.8 kWh.*baseline 44\.1 kWh.*\+110\.4%.*3 readings/ })).toBeInTheDocument()
+    expect(screen.getByText('Consumo')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /Consumo \(kWh\).*último 92,8 kWh.*baseline 44,1 kWh.*\+110,4%.*3 lecturas/ })).toBeInTheDocument()
   })
 
   it('explains the two line styles when a baseline exists', () => {
     render(<MetricChart metric={kwh} series={series} />)
-    expect(screen.getByText('Observed')).toBeInTheDocument()
+    expect(screen.getByText('Observado')).toBeInTheDocument()
     expect(screen.getByText('Baseline')).toBeInTheDocument()
   })
 
   it('leaves the baseline out of the legend and the summary when the meter has none', () => {
     render(<MetricChart metric={pf} series={toChartSeries([reading(0, 1, 1)], pf)} />)
     expect(screen.queryByText('Baseline')).not.toBeInTheDocument()
-    expect(screen.getByRole('img', { name: /Power factor \(PF\).*latest 0\.95 PF/ })).not.toHaveAccessibleName(/baseline/)
+    expect(screen.getByRole('img', { name: /Factor de potencia \(FP\).*último 0,95 FP/ })).not.toHaveAccessibleName(/baseline/)
   })
 
   it('names each highlighted anomaly window in the text alternative and the legend', () => {
-    const areas = toReferenceAreas([{ start: '2026-09-12T14:00:00Z', end: '2026-09-13T02:00:00Z', severity: 'HIGH', label: 'Level shift up' }])
+    const areas = toReferenceAreas([{ start: '2026-09-12T14:00:00Z', end: '2026-09-13T02:00:00Z', severity: 'HIGH', label: 'Cambio de nivel al alza' }])
     render(<MetricChart metric={kwh} series={series} areas={areas} />)
-    expect(screen.getByRole('img', { name: /1 anomaly window highlighted: Level shift up, High severity, 12 Sep 2026, 14:00 UTC – 13 Sep 2026, 02:00 UTC/ })).toBeInTheDocument()
-    expect(screen.getByText('Anomaly window')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /1 ventana de anomalía resaltada: Cambio de nivel al alza, severidad alta, 12 sept 2026, 14:00 UTC – 13 sept 2026, 02:00 UTC/ })).toBeInTheDocument()
+    expect(screen.getByText('Ventana de anomalía')).toBeInTheDocument()
   })
 
   it('counts several windows and falls back to the severity when a window has no label', () => {
@@ -67,18 +67,18 @@ describe('MetricChart', () => {
       { start: '2026-09-13T00:00:00Z', end: '2026-09-13T05:00:00Z', severity: 'MEDIUM' },
     ])
     render(<MetricChart metric={kwh} series={series} areas={areas} />)
-    expect(screen.getByRole('img', { name: /2 anomaly windows highlighted: Low severity, 12 Sep 2026, 14:00–20:00 UTC; Medium severity, 13 Sep 2026, 00:00–05:00 UTC/ })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /2 ventanas de anomalía resaltadas: severidad baja, 12 sept 2026, 14:00–20:00 UTC; severidad media, 13 sept 2026, 00:00–05:00 UTC/ })).toBeInTheDocument()
   })
 
   it('shows no window text or legend entry without windows', () => {
     render(<MetricChart metric={kwh} series={series} />)
-    expect(screen.queryByText('Anomaly window')).not.toBeInTheDocument()
+    expect(screen.queryByText('Ventana de anomalía')).not.toBeInTheDocument()
     expect(screen.getByRole('img')).not.toHaveAccessibleName(/anomaly window/)
   })
 
   it('says so when there are no readings', () => {
     render(<MetricChart metric={kwh} series={[]} />)
-    expect(screen.getByText('No readings to chart yet.')).toBeInTheDocument()
+    expect(screen.getByText('Aún no hay lecturas para graficar.')).toBeInTheDocument()
     expect(screen.queryByRole('img')).not.toBeInTheDocument()
   })
 })
@@ -88,15 +88,15 @@ describe('ChartTooltipContent', () => {
 
   it('shows the UTC timestamp, the value, the baseline and the delta', () => {
     render(<ChartTooltipContent metric={kwh} point={point} />)
-    expect(screen.getByText('12 Sep 2026, 02:00 UTC')).toBeInTheDocument()
-    expect(screen.getByText('92.8 kWh')).toBeInTheDocument()
-    expect(screen.getByText('44.1 kWh')).toBeInTheDocument()
-    expect(screen.getByText('+110.4%')).toBeInTheDocument()
+    expect(screen.getByText('12 sept 2026, 02:00 UTC')).toBeInTheDocument()
+    expect(screen.getByText('92,8 kWh')).toBeInTheDocument()
+    expect(screen.getByText('44,1 kWh')).toBeInTheDocument()
+    expect(screen.getByText('+110,4%')).toBeInTheDocument()
   })
 
   it('omits baseline and delta without a baseline', () => {
     render(<ChartTooltipContent metric={kwh} point={{ ...point, baseline: null }} />)
-    expect(screen.getByText('92.8 kWh')).toBeInTheDocument()
+    expect(screen.getByText('92,8 kWh')).toBeInTheDocument()
     expect(screen.queryByText('Baseline')).not.toBeInTheDocument()
     expect(screen.queryByText('Delta')).not.toBeInTheDocument()
   })

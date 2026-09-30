@@ -7,9 +7,9 @@ describe('LoginView', () => {
     const onSubmit = vi.fn()
     render(<LoginView onSubmit={onSubmit} submitting={false} error={null} />)
 
-    await userEvent.type(screen.getByLabelText('Username'), 'admin')
-    await userEvent.type(screen.getByLabelText('Password'), 'admin123')
-    await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    await userEvent.type(screen.getByLabelText('Usuario'), 'admin')
+    await userEvent.type(screen.getByLabelText('Contraseña'), 'admin123')
+    await userEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
 
     expect(onSubmit).toHaveBeenCalledWith('admin', 'admin123')
   })
@@ -18,21 +18,21 @@ describe('LoginView', () => {
     const onSubmit = vi.fn()
     render(<LoginView onSubmit={onSubmit} submitting={false} error={null} />)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
 
-    expect(screen.getByText('Enter your username')).toBeInTheDocument()
-    expect(screen.getByText('Enter your password')).toBeInTheDocument()
+    expect(screen.getByText('Ingrese su usuario')).toBeInTheDocument()
+    expect(screen.getByText('Ingrese su contraseña')).toBeInTheDocument()
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
   it('announces a server error', () => {
-    render(<LoginView onSubmit={vi.fn()} submitting={false} error="Incorrect username or password." />)
-    expect(screen.getByRole('alert')).toHaveTextContent('Incorrect username or password.')
+    render(<LoginView onSubmit={vi.fn()} submitting={false} error="Usuario o contraseña incorrectos." />)
+    expect(screen.getByRole('alert')).toHaveTextContent('Usuario o contraseña incorrectos.')
   })
 
   it('disables the button while submitting', () => {
     render(<LoginView onSubmit={vi.fn()} submitting error={null} />)
-    expect(screen.getByRole('button', { name: /Sign in/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Iniciar sesión/ })).toBeDisabled()
   })
 
   it('shows the demo credentials hint', () => {

@@ -1,6 +1,6 @@
 import type { MeterEvent } from '../../api/types'
-import { eventLabel } from '../../lib/chartData'
 import { formatDateTime } from '../../lib/format'
+import { eventLabel } from '../../lib/labels'
 import { Badge } from '../atoms/Badge'
 import { Card } from '../atoms/Card'
 
@@ -11,7 +11,7 @@ export function RelatedEventCard({ event }: { event: MeterEvent | null }) {
   return (
     <Card role="region" aria-labelledby="related-event-heading" className="flex flex-col gap-2">
       <h2 id="related-event-heading" className="text-base font-semibold text-text">
-        Related event
+        Evento relacionado
       </h2>
       {explainsChange(event) ? (
         <>
@@ -24,7 +24,7 @@ export function RelatedEventCard({ event }: { event: MeterEvent | null }) {
           <p className="text-sm text-text">{event.description}</p>
         </>
       ) : (
-        <p className="text-sm text-muted">No operational event explains this change.</p>
+        <p className="text-sm text-muted">Ningún evento operativo explica este cambio.</p>
       )}
     </Card>
   )

@@ -27,16 +27,16 @@ export interface MetricChartProps {
 
 const withUnit = (metric: MetricConfig, value: number): string => `${formatNumber(value, metric.decimals)} ${metric.unit}`
 
-const severityOfTone: Record<SeverityToken, string> = { 'sev-high': 'High', 'sev-medium': 'Medium', 'sev-low': 'Low' }
+const severityOfTone: Record<SeverityToken, string> = { 'sev-high': 'alta', 'sev-medium': 'media', 'sev-low': 'baja' }
 
 /** Windows are tinted by severity, so the same information is spelled out for screen readers. */
 function describeAreas(areas: ReferenceAreaRange[]): string {
   if (areas.length === 0) return ''
   const items = areas.map((a) => {
     const when = formatWindow(new Date(a.x1).toISOString(), new Date(a.x2).toISOString())
-    return `${a.label ? `${a.label}, ` : ''}${severityOfTone[a.tone]} severity, ${when}`
+    return `${a.label ? `${a.label}, ` : ''}severidad ${severityOfTone[a.tone]}, ${when}`
   })
-  return ` ${areas.length} anomaly ${areas.length === 1 ? 'window' : 'windows'} highlighted: ${items.join('; ')}.`
+  return ` ${areas.length} ${areas.length === 1 ? 'ventana de anomalía resaltada' : 'ventanas de anomalía resaltadas'}: ${items.join('; ')}.`
 }
 
 function describeSeries(metric: MetricConfig, s: SeriesSummary, areas: ReferenceAreaRange[]): string {
@@ -44,7 +44,7 @@ function describeSeries(metric: MetricConfig, s: SeriesSummary, areas: Reference
     s.latestBaseline !== null && s.latestDeltaPct !== null
       ? `, baseline ${withUnit(metric, s.latestBaseline)} (${formatSignedPercent(s.latestDeltaPct)})`
       : ''
-  return `${metric.title} (${metric.unit}): latest ${withUnit(metric, s.latest)}${baseline}; range ${formatNumber(s.min, metric.decimals)} to ${withUnit(metric, s.max)} over ${s.count} readings.${describeAreas(areas)}`
+  return `${metric.title} (${metric.unit}): último ${withUnit(metric, s.latest)}${baseline}; rango de ${formatNumber(s.min, metric.decimals)} a ${withUnit(metric, s.max)} en ${s.count} lecturas.${describeAreas(areas)}`
 }
 
 /** Hover card: UTC time, observed value, baseline and the deviation from it. */
@@ -55,7 +55,7 @@ export function ChartTooltipContent({ metric, point }: { metric: MetricConfig; p
     <div className="rounded-lg border border-border bg-surface px-3 py-2 text-xs shadow-raised">
       <p className="mb-1 font-semibold text-text">{formatDateTime(new Date(point.t).toISOString())}</p>
       <dl className="tabular grid grid-cols-[auto_auto] gap-x-4 gap-y-0.5">
-        <dt className="text-muted">Observed</dt>
+        <dt className="text-muted">Observado</dt>
         <dd className="text-right font-semibold text-text">{withUnit(metric, point.observed)}</dd>
         {point.baseline !== null && (
           <>
@@ -76,12 +76,12 @@ export function ChartTooltipContent({ metric, point }: { metric: MetricConfig; p
 
 function Legend({ hasBaseline, hasWindows }: { hasBaseline: boolean; hasWindows: boolean }) {
   return (
-    <ul className="flex items-center gap-4 text-xs text-muted" aria-label="Legend">
+    <ul className="flex items-center gap-4 text-xs text-muted" aria-label="Leyenda">
       <li className="flex items-center gap-1.5">
         <svg width="20" height="4" aria-hidden="true">
           <line x1="0" y1="2" x2="20" y2="2" stroke={chartTheme.observed} strokeWidth="2.5" />
         </svg>
-        Observed
+        Observado
       </li>
       {hasBaseline && (
         <li className="flex items-center gap-1.5">
@@ -94,7 +94,7 @@ function Legend({ hasBaseline, hasWindows }: { hasBaseline: boolean; hasWindows:
       {hasWindows && (
         <li className="flex items-center gap-1.5">
           <span aria-hidden="true" className="h-3 w-5 rounded-sm bg-muted/20 ring-1 ring-inset ring-muted/40" />
-          Anomaly window
+          Ventana de anomalía
         </li>
       )}
     </ul>
@@ -113,7 +113,7 @@ export function MetricChart({ metric, series, areas = [], lines = [], domain }: 
         <Legend hasBaseline={hasBaseline} hasWindows={areas.length > 0} />
       </div>
 
-      {!summary && <p className="py-10 text-center text-sm text-muted">No readings to chart yet.</p>}
+      {!summary && <p className="py-10 text-center text-sm text-muted">Aún no hay lecturas para graficar.</p>}
       {summary && (
         <div role="img" aria-label={describeSeries(metric, summary, areas)} className="h-48 w-full sm:h-56">
           <ResponsiveContainer width="100%" height="100%">

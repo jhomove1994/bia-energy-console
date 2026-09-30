@@ -6,9 +6,9 @@ import { LoginView } from './LoginView'
 
 function messageFor(error: unknown): string {
   if (error instanceof ApiError) {
-    return error.code === 'invalid_credentials' ? 'Incorrect username or password.' : error.message
+    return error.message
   }
-  return 'Something went wrong. Please try again.'
+  return 'Algo salió mal. Intente de nuevo.'
 }
 
 export function LoginPage() {

@@ -187,7 +187,7 @@ describe('useAnalysisJob', () => {
 
     act(() => result.current.start())
 
-    await waitFor(() => expect(result.current.error?.message).toBe('analysis unavailable'))
+    await waitFor(() => expect(result.current.error?.message).toBe('Ocurrió un error interno en el servidor. Intente de nuevo.'))
     expect(result.current.active).toBe(false)
   })
 })

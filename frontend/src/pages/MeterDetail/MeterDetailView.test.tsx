@@ -83,12 +83,12 @@ describe('MeterDetailView', () => {
   it('shows the meter id, status and consumption against the baseline', () => {
     setup()
     expect(screen.getByRole('heading', { level: 1, name: /M-109/ })).toBeInTheDocument()
-    expect(screen.getByText('Critical')).toBeInTheDocument()
-    expect(screen.getByRole('group', { name: 'Total consumption' })).toHaveTextContent('12,345.7 kWh')
-    expect(screen.getByRole('group', { name: 'Daily variation' })).toHaveTextContent('+103.7%')
-    expect(screen.getByRole('group', { name: 'Latest 24 h' })).toHaveTextContent('48.0 kWh')
-    expect(screen.getByRole('group', { name: 'Latest 24 h' })).toHaveTextContent('Baseline ~24.0 kWh')
-    expect(screen.getByRole('group', { name: 'Open findings' })).toHaveTextContent('1')
+    expect(screen.getByText('Crítico')).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Consumo total' })).toHaveTextContent('12.345,7 kWh')
+    expect(screen.getByRole('group', { name: 'Variación diaria' })).toHaveTextContent('+103,7%')
+    expect(screen.getByRole('group', { name: 'Últimas 24 h' })).toHaveTextContent('48,0 kWh')
+    expect(screen.getByRole('group', { name: 'Últimas 24 h' })).toHaveTextContent('Baseline ~24,0 kWh')
+    expect(screen.getByRole('group', { name: 'Hallazgos abiertos' })).toHaveTextContent('1')
   })
 
   it('renders the four charts and the events', () => {
@@ -99,100 +99,100 @@ describe('MeterDetailView', () => {
 
   it('turns the open findings figure into a link to the filtered anomalies list', () => {
     setup()
-    const kpi = screen.getByRole('group', { name: 'Open findings' })
-    expect(within(kpi).getByRole('link', { name: 'View findings' })).toHaveAttribute('href', '/anomalies?meter_id=M-109')
+    const kpi = screen.getByRole('group', { name: 'Hallazgos abiertos' })
+    expect(within(kpi).getByRole('link', { name: 'Ver hallazgos' })).toHaveAttribute('href', '/anomalies?meter_id=M-109')
   })
 
   it('offers no link when the meter has no findings', () => {
     setup({ meter: { ...meter, anomaly_count: 0 } })
-    expect(within(screen.getByRole('group', { name: 'Open findings' })).queryByRole('link')).not.toBeInTheDocument()
+    expect(within(screen.getByRole('group', { name: 'Hallazgos abiertos' })).queryByRole('link')).not.toBeInTheDocument()
   })
 
   it('lists the anomalies of this meter with a link to each investigation', () => {
     setup({ anomalies: { status: 'ready', data: [makeAnomaly()] } })
-    const section = screen.getByRole('region', { name: 'Anomalies for this meter' })
-    expect(within(section).getByText('Real anomaly')).toBeInTheDocument()
-    expect(within(section).getByText('Level shift up')).toBeInTheDocument()
-    expect(within(section).queryByRole('columnheader', { name: 'Meter' })).not.toBeInTheDocument()
-    expect(within(section).getByRole('link', { name: 'Investigate M-109' })).toHaveAttribute('href', '/anomalies/an-1')
+    const section = screen.getByRole('region', { name: 'Anomalías de este medidor' })
+    expect(within(section).getByText('Anomalía real')).toBeInTheDocument()
+    expect(within(section).getByText('Cambio de nivel al alza')).toBeInTheDocument()
+    expect(within(section).queryByRole('columnheader', { name: 'Medidor' })).not.toBeInTheDocument()
+    expect(within(section).getByRole('link', { name: 'Investigar M-109' })).toHaveAttribute('href', '/anomalies/an-1')
   })
 
   it('says so when the latest analysis found nothing for the meter', () => {
     setup()
-    expect(screen.getByRole('region', { name: 'Anomalies for this meter' })).toHaveTextContent('No anomalies in the latest analysis for this meter.')
+    expect(screen.getByRole('region', { name: 'Anomalías de este medidor' })).toHaveTextContent('Sin anomalías en el último análisis para este medidor.')
   })
 
   it('highlights the anomaly windows on the charts', () => {
     setup({ anomalies: { status: 'ready', data: [makeAnomaly()] } })
-    for (const chart of screen.getAllByRole('img')) expect(chart).toHaveAccessibleName(/1 anomaly window highlighted: Level shift up, High severity/)
+    for (const chart of screen.getAllByRole('img')) expect(chart).toHaveAccessibleName(/1 ventana de anomalía resaltada: Cambio de nivel al alza, severidad alta/)
   })
 
   it('shows a section error for the anomalies without hiding the meter or the charts', async () => {
-    const props = setup({ anomalies: { status: 'error', message: 'anomalies down' } })
-    expect(screen.getByRole('alert')).toHaveTextContent('anomalies down')
+    const props = setup({ anomalies: { status: 'error', message: 'Anomalías no disponibles' } })
+    expect(screen.getByRole('alert')).toHaveTextContent('Anomalías no disponibles')
     expect(screen.getAllByRole('img')).toHaveLength(4)
-    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
     expect(props.onRetry).toHaveBeenCalled()
   })
 
   it('shows a placeholder while the anomalies load', () => {
     setup({ anomalies: { status: 'loading' } })
-    expect(screen.getByRole('status', { name: 'Loading anomalies' })).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'Cargando anomalías' })).toBeInTheDocument()
   })
 
   it('shows the loading state', () => {
     setup({ state: 'loading', meter: undefined })
-    expect(screen.getByRole('status', { name: 'Loading meter' })).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'Cargando medidor' })).toBeInTheDocument()
   })
 
   it('shows a not-found state that leads back to the list', () => {
     setup({ state: 'not-found', meter: undefined })
-    expect(screen.getByText('Meter not found')).toBeInTheDocument()
+    expect(screen.getByText('Medidor no encontrado')).toBeInTheDocument()
     expect(screen.getByText(/M-109/)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Back to meters' })).toHaveAttribute('href', '/meters')
+    expect(screen.getByRole('link', { name: 'Volver a medidores' })).toHaveAttribute('href', '/meters')
   })
 
   it('announces an error and retries', async () => {
-    const props = setup({ state: 'error', meter: undefined, errorMessage: 'Cannot reach the server.' })
-    expect(screen.getByRole('alert')).toHaveTextContent('Cannot reach the server.')
-    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    const props = setup({ state: 'error', meter: undefined, errorMessage: 'No se pudo conectar con el servidor.' })
+    expect(screen.getByRole('alert')).toHaveTextContent('No se pudo conectar con el servidor.')
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
     expect(props.onRetry).toHaveBeenCalled()
   })
 
   it('shows a section error for the charts without hiding the meter', async () => {
-    const props = setup({ readings: { status: 'error', message: 'readings down' } })
+    const props = setup({ readings: { status: 'error', message: 'Lecturas no disponibles' } })
     expect(screen.getByRole('heading', { level: 1, name: /M-109/ })).toBeInTheDocument()
-    expect(screen.getByRole('alert')).toHaveTextContent('readings down')
-    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Lecturas no disponibles')
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
     expect(props.onRetry).toHaveBeenCalled()
   })
 
   it('shows loading placeholders while the charts and events load', () => {
     setup({ readings: { status: 'loading' }, events: { status: 'loading' } })
-    expect(screen.getByRole('status', { name: 'Loading charts' })).toBeInTheDocument()
-    expect(screen.getByRole('status', { name: 'Loading events' })).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'Cargando gráficos' })).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'Cargando eventos' })).toBeInTheDocument()
   })
 
   it('runs the analysis from the header', async () => {
     const props = setup()
-    await userEvent.click(screen.getByRole('button', { name: 'Run AI Analysis' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Ejecutar análisis IA' }))
     expect(props.onRun).toHaveBeenCalled()
   })
 
   it('reports a failed start', () => {
     setup({ runError: 'busy' })
-    expect(screen.getByRole('alert')).toHaveTextContent('Could not start the analysis: busy')
+    expect(screen.getByRole('alert')).toHaveTextContent('No se pudo iniciar el análisis: busy')
   })
 
   it('shows the live progress panel and disables the trigger while a run is active', () => {
     setup({ busy: true, analysis: runningAnalysis })
-    expect(screen.getByRole('region', { name: 'AI analysis' })).toBeInTheDocument()
-    expect(screen.getByRole('progressbar', { name: 'Analysis progress' })).toHaveAttribute('aria-valuenow', '28')
-    expect(screen.getByRole('button', { name: /Analyzing/ })).toBeDisabled()
+    expect(screen.getByRole('region', { name: 'Análisis con IA' })).toBeInTheDocument()
+    expect(screen.getByRole('progressbar', { name: 'Progreso del análisis' })).toHaveAttribute('aria-valuenow', '28')
+    expect(screen.getByRole('button', { name: /Analizando/ })).toBeDisabled()
   })
 
   it('shows no panel before any run', () => {
     setup()
-    expect(screen.queryByRole('region', { name: 'AI analysis' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Análisis con IA' })).not.toBeInTheDocument()
   })
 })

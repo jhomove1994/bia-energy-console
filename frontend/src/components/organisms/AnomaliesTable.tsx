@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { Anomaly } from '../../api/types'
 import { formatWindow } from '../../lib/format'
-import { actionLabel } from '../../lib/status'
+import { actionLabel, kindLabel } from '../../lib/labels'
 import { Card } from '../atoms/Card'
 import { ConfidenceMeter } from '../molecules/ConfidenceMeter'
 import { SeverityBadge } from '../molecules/SeverityBadge'
@@ -23,33 +23,33 @@ export function AnomaliesTable({ anomalies, showMeter = true }: AnomaliesTablePr
         <thead className="border-b border-border bg-bg/60">
           <tr>
             <th scope="col" className={th}>
-              Priority
+              Prioridad
             </th>
             {showMeter && (
               <th scope="col" className={th}>
-                Meter
+                Medidor
               </th>
             )}
             <th scope="col" className={th}>
-              Anomaly
+              Anomalía
             </th>
             <th scope="col" className={th}>
-              Type
+              Tipo
             </th>
             <th scope="col" className={th}>
-              Severity
+              Severidad
             </th>
             <th scope="col" className={th}>
-              Confidence
+              Confianza
             </th>
             <th scope="col" className={th}>
-              Detected window
+              Ventana detectada
             </th>
             <th scope="col" className={th}>
-              Recommended action
+              Acción recomendada
             </th>
             <th scope="col" className={th}>
-              Investigate
+              Investigar
             </th>
           </tr>
         </thead>
@@ -63,10 +63,10 @@ export function AnomaliesTable({ anomalies, showMeter = true }: AnomaliesTablePr
                 </th>
               )}
               {showMeter ? (
-                <td className="px-4 py-3">{a.anomaly}</td>
+                <td className="px-4 py-3">{kindLabel(a.kind, a.anomaly)}</td>
               ) : (
                 <th scope="row" className="px-4 py-3 text-left font-semibold">
-                  {a.anomaly}
+                  {kindLabel(a.kind, a.anomaly)}
                 </th>
               )}
               <td className="px-4 py-3">
@@ -84,10 +84,10 @@ export function AnomaliesTable({ anomalies, showMeter = true }: AnomaliesTablePr
                 {/* The link stretches over the whole row, so the entire row opens the investigation. */}
                 <Link
                   to={`/anomalies/${encodeURIComponent(a.id)}`}
-                  aria-label={`Investigate ${a.meter_id}`}
+                  aria-label={`Investigar ${a.meter_id}`}
                   className="font-semibold text-primary-strong after:absolute after:inset-0 after:content-[''] hover:underline"
                 >
-                  Investigate
+                  Investigar
                 </Link>
               </td>
             </tr>

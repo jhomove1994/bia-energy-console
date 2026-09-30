@@ -22,7 +22,7 @@ describe('listAnomalies', () => {
 
     expect(requested()).toBe('/api/anomalies')
     expect(list.items).toHaveLength(4)
-    expect(list.summary_text).toBe('4 anomalies detected · 2 require priority attention')
+    expect(list.summary_text).toBe('4 anomalías detectadas · 2 requieren atención prioritaria')
   })
 
   it('sends every filter that is set and skips empty ones', async () => {

@@ -49,7 +49,7 @@ export function MetersPage() {
       state={meters.isPending ? 'loading' : meters.isError ? 'error' : 'ready'}
       rows={meters.data}
       filters={{ query, status, sort }}
-      errorMessage={meters.isError ? (meters.error instanceof ApiError ? meters.error.message : 'Unexpected error') : undefined}
+      errorMessage={meters.isError ? (meters.error instanceof ApiError ? meters.error.message : 'Error inesperado') : undefined}
       onQueryChange={(q) => update({ q })}
       onStatusChange={(s) => update({ status: s })}
       onSortChange={(s) => update({ sort: s })}

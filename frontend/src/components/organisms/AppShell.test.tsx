@@ -6,7 +6,7 @@ import { routerFuture } from '../../app/router'
 
 const nav = [
   { to: '/', label: 'Dashboard', end: true },
-  { to: '/meters', label: 'Meters' },
+  { to: '/meters', label: 'Medidores' },
 ]
 
 function renderShell(path = '/', onLogout = vi.fn()) {
@@ -29,19 +29,19 @@ describe('AppShell', () => {
 
   it('lists the navigation and marks the current page', () => {
     renderShell('/meters')
-    expect(screen.getByRole('link', { name: 'Meters' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Medidores' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('link', { name: 'Dashboard' })).not.toHaveAttribute('aria-current')
   })
 
   it('calls onLogout from the sign out button', async () => {
     const onLogout = renderShell()
-    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
     expect(onLogout).toHaveBeenCalledTimes(1)
   })
 
   it('offers a skip link to the main content', () => {
     renderShell()
-    expect(screen.getByRole('link', { name: 'Skip to content' })).toHaveAttribute('href', '#main')
+    expect(screen.getByRole('link', { name: 'Saltar al contenido' })).toHaveAttribute('href', '#main')
     expect(screen.getByRole('main')).toHaveAttribute('id', 'main')
   })
 })

@@ -32,7 +32,7 @@ describe('ChartGrid', () => {
   it('renders one chart per metric: kWh, voltage, current and power factor', () => {
     render(<ChartGrid readings={readings} events={events} />)
     expect(screen.getAllByRole('img')).toHaveLength(4)
-    for (const name of [/Consumption \(kWh\)/, /Voltage \(V\)/, /Current \(A\)/, /Power factor \(PF\)/]) {
+    for (const name of [/Consumo \(kWh\)/, /Voltaje \(V\)/, /Corriente \(A\)/, /Factor de potencia \(FP\)/]) {
       expect(screen.getByRole('img', { name })).toBeInTheDocument()
     }
   })
@@ -41,22 +41,22 @@ describe('ChartGrid', () => {
     // Readings at 10:00, 11:00, 12:00 and 13:00; the range keeps 11:00 to 12:00.
     render(<ChartGrid readings={readings} events={[]} range={{ from: Date.parse('2026-09-12T11:00:00Z'), to: Date.parse('2026-09-12T12:00:00Z') }} />)
     expect(screen.getAllByRole('img')).toHaveLength(4)
-    for (const chart of screen.getAllByRole('img')) expect(chart).toHaveAccessibleName(/over 2 readings/)
+    for (const chart of screen.getAllByRole('img')) expect(chart).toHaveAccessibleName(/en 2 lecturas/)
   })
 
   it('shows the whole series without a range', () => {
     render(<ChartGrid readings={readings} events={[]} />)
-    for (const chart of screen.getAllByRole('img')) expect(chart).toHaveAccessibleName(/over 4 readings/)
+    for (const chart of screen.getAllByRole('img')) expect(chart).toHaveAccessibleName(/en 4 lecturas/)
   })
 
   it('highlights anomaly windows on every chart', () => {
-    render(<ChartGrid readings={readings} events={[]} windows={[{ start: '2026-09-12T11:00:00Z', end: '2026-09-12T12:00:00Z', severity: 'HIGH', label: 'Level shift up' }]} />)
-    for (const chart of screen.getAllByRole('img')) expect(chart).toHaveAccessibleName(/1 anomaly window highlighted: Level shift up, High severity/)
-    expect(screen.getAllByText('Anomaly window')).toHaveLength(4)
+    render(<ChartGrid readings={readings} events={[]} windows={[{ start: '2026-09-12T11:00:00Z', end: '2026-09-12T12:00:00Z', severity: 'HIGH', label: 'Cambio de nivel al alza' }]} />)
+    for (const chart of screen.getAllByRole('img')) expect(chart).toHaveAccessibleName(/1 ventana de anomalía resaltada: Cambio de nivel al alza, severidad alta/)
+    expect(screen.getAllByText('Ventana de anomalía')).toHaveLength(4)
   })
 
   it('shows the empty message on every chart without readings', () => {
     render(<ChartGrid readings={[]} events={[]} />)
-    expect(screen.getAllByText('No readings to chart yet.')).toHaveLength(4)
+    expect(screen.getAllByText('Aún no hay lecturas para graficar.')).toHaveLength(4)
   })
 })

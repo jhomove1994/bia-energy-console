@@ -8,6 +8,7 @@ import { Skeleton } from '../../components/atoms/Skeleton'
 import { RunAnalysisButton } from '../../components/molecules/RunAnalysisButton'
 import { AnomaliesTable } from '../../components/organisms/AnomaliesTable'
 import { RunAnalysisFeedback } from '../../components/organisms/RunAnalysisFeedback'
+import { severityLabel, typeLabel } from '../../lib/labels'
 
 export interface AnomalyViewFilters {
   /** Empty string means every type / severity / meter. */
@@ -33,23 +34,23 @@ export interface AnomaliesViewProps {
 }
 
 export const typeOptions: SelectOption[] = [
-  { value: '', label: 'All types' },
-  { value: 'REAL_ANOMALY', label: 'Real anomaly' },
-  { value: 'DATA_QUALITY', label: 'Data quality' },
-  { value: 'EXPLAINABLE_ANOMALY', label: 'Explainable' },
-  { value: 'FALSE_POSITIVE', label: 'False positive' },
+  { value: '', label: 'Todos los tipos' },
+  { value: 'REAL_ANOMALY', label: typeLabel('REAL_ANOMALY') },
+  { value: 'DATA_QUALITY', label: typeLabel('DATA_QUALITY') },
+  { value: 'EXPLAINABLE_ANOMALY', label: typeLabel('EXPLAINABLE_ANOMALY') },
+  { value: 'FALSE_POSITIVE', label: typeLabel('FALSE_POSITIVE') },
 ]
 
 export const severityOptions: SelectOption[] = [
-  { value: '', label: 'All severities' },
-  { value: 'HIGH', label: 'High' },
-  { value: 'MEDIUM', label: 'Medium' },
-  { value: 'LOW', label: 'Low' },
+  { value: '', label: 'Todas las severidades' },
+  { value: 'HIGH', label: severityLabel('HIGH') },
+  { value: 'MEDIUM', label: severityLabel('MEDIUM') },
+  { value: 'LOW', label: severityLabel('LOW') },
 ]
 
 function LoadingSkeleton() {
   return (
-    <div role="status" aria-label="Loading anomalies" className="flex flex-col gap-2 rounded-card border border-border bg-surface p-4 shadow-card">
+    <div role="status" aria-label="Cargando anomalías" className="flex flex-col gap-2 rounded-card border border-border bg-surface p-4 shadow-card">
       {Array.from({ length: 4 }, (_, i) => (
         <Skeleton key={i} className="h-11 w-full" />
       ))}
@@ -67,8 +68,8 @@ export function AnomaliesView({ state, list, filters, errorMessage, onTypeChange
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">AI Anomalies</h1>
-          <p className="mt-1 text-sm text-muted">Findings of the latest analysis, ranked by priority. Open one to see the evidence and the recommended action.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Anomalías IA</h1>
+          <p className="mt-1 text-sm text-muted">Hallazgos del último análisis, ordenados por prioridad. Abra uno para ver la evidencia y la acción recomendada.</p>
         </div>
         {state === 'ready' && !noAnalysisYet && run}
       </div>
@@ -83,44 +84,44 @@ export function AnomaliesView({ state, list, filters, errorMessage, onTypeChange
       )}
 
       {state === 'ready' && !noAnalysisYet && (
-        <div role="group" aria-label="Filters" className="flex flex-wrap items-end gap-3">
-          <Select id="anomaly-type" label="Type" className="w-44" options={typeOptions} value={filters.type} onChange={(e) => onTypeChange(e.target.value)} />
-          <Select id="anomaly-severity" label="Severity" className="w-44" options={severityOptions} value={filters.severity} onChange={(e) => onSeverityChange(e.target.value)} />
+        <div role="group" aria-label="Filtros" className="flex flex-wrap items-end gap-3">
+          <Select id="anomaly-type" label="Tipo" className="w-44" options={typeOptions} value={filters.type} onChange={(e) => onTypeChange(e.target.value)} />
+          <Select id="anomaly-severity" label="Severidad" className="w-44" options={severityOptions} value={filters.severity} onChange={(e) => onSeverityChange(e.target.value)} />
           {filters.meterId && (
-            <span className="inline-flex h-10 items-center rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary-strong">Meter {filters.meterId}</span>
+            <span className="inline-flex h-10 items-center rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary-strong">Medidor {filters.meterId}</span>
           )}
           {filtered && (
             <Button variant="ghost" onClick={onClearFilters}>
-              Clear filters
+              Borrar filtros
             </Button>
           )}
         </div>
       )}
 
       {state === 'loading' && <LoadingSkeleton />}
-      {state === 'error' && <ErrorState title="Could not load the anomalies" message={errorMessage ?? 'Unknown error'} onRetry={onRetry} />}
+      {state === 'error' && <ErrorState title="No se pudieron cargar las anomalías" message={errorMessage ?? 'Error desconocido'} onRetry={onRetry} />}
       {noAnalysisYet && (
         <EmptyState
           icon={<SparklesIcon width={24} height={24} />}
-          title="No analysis yet"
-          description="Run the AI analysis to detect consumption anomalies across the fleet and get a recommended action for each one."
+          title="Aún no hay análisis"
+          description="Ejecute el análisis con IA para detectar anomalías de consumo en la flota y obtener una acción recomendada para cada una."
           action={run}
         />
       )}
       {state === 'ready' && !noAnalysisYet && items.length === 0 && filtered && (
         <EmptyState
           icon={<AlertIcon width={24} height={24} />}
-          title="No anomalies match these filters"
-          description="Loosen the type, severity or meter filter to see more findings."
+          title="Ninguna anomalía coincide con estos filtros"
+          description="Flexibilice el filtro de tipo, severidad o medidor para ver más hallazgos."
           action={
             <Button variant="secondary" onClick={onClearFilters}>
-              Clear filters
+              Borrar filtros
             </Button>
           }
         />
       )}
       {state === 'ready' && !noAnalysisYet && items.length === 0 && !filtered && (
-        <EmptyState icon={<AlertIcon width={24} height={24} />} title="No anomalies were detected" description="The latest analysis found nothing that needs attention. Run it again after new readings arrive." />
+        <EmptyState icon={<AlertIcon width={24} height={24} />} title="No se detectaron anomalías" description="El último análisis no encontró nada que requiera atención. Vuelva a ejecutarlo cuando lleguen nuevas lecturas." />
       )}
       {state === 'ready' && items.length > 0 && <AnomaliesTable anomalies={items} showMeter />}
     </div>

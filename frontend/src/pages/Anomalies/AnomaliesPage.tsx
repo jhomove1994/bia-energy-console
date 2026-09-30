@@ -6,7 +6,7 @@ import { useAnomalies } from '../../hooks/useAnomalies'
 import { AnomaliesView } from './AnomaliesView'
 
 function describe(error: unknown): string {
-  return error instanceof ApiError ? error.message : 'Unexpected error'
+  return error instanceof ApiError ? error.message : 'Error inesperado'
 }
 
 /** Container: the filters live in the URL search string (`type`, `severity`, `meter_id`), so views are shareable links. */

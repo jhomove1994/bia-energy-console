@@ -31,31 +31,31 @@ describe('MetersView', () => {
   it('renders the table when ready', () => {
     setup()
     expect(screen.getByRole('table')).toBeInTheDocument()
-    expect(screen.getByText('1 meter')).toBeInTheDocument()
+    expect(screen.getByText('1 medidor')).toBeInTheDocument()
   })
 
   it('shows a loading status instead of the table', () => {
     setup({ state: 'loading', rows: undefined })
-    expect(screen.getByRole('status', { name: 'Loading meters' })).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'Cargando medidores' })).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
   it('announces an error and retries', async () => {
-    const props = setup({ state: 'error', rows: undefined, errorMessage: 'Cannot reach the server.' })
-    expect(screen.getByRole('alert')).toHaveTextContent('Cannot reach the server.')
-    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    const props = setup({ state: 'error', rows: undefined, errorMessage: 'No se pudo conectar con el servidor.' })
+    expect(screen.getByRole('alert')).toHaveTextContent('No se pudo conectar con el servidor.')
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
     expect(props.onRetry).toHaveBeenCalled()
   })
 
   it('offers to clear the filters when nothing matches', async () => {
     const props = setup({ rows: [], filters: { query: 'zzz', status: '', sort: 'meter_id:asc' } })
-    expect(screen.getByText('No meters match your filters')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+    expect(screen.getByText('Ningún medidor coincide con los filtros')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Borrar filtros' }))
     expect(props.onClear).toHaveBeenCalled()
   })
 
   it('keeps the filter bar available while empty', () => {
     setup({ rows: [] })
-    expect(screen.getByRole('searchbox', { name: 'Search meters' })).toBeInTheDocument()
+    expect(screen.getByRole('searchbox', { name: 'Buscar medidores' })).toBeInTheDocument()
   })
 })

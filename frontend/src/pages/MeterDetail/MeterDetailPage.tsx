@@ -8,7 +8,7 @@ import { toSection } from '../../lib/section'
 import { MeterDetailView } from './MeterDetailView'
 
 function describe(error: unknown): string {
-  return error instanceof ApiError ? error.message : 'Unexpected error'
+  return error instanceof ApiError ? error.message : 'Error inesperado'
 }
 
 /** Container: the three queries start together (parallel), the view only receives props. */

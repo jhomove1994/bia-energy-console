@@ -1,6 +1,6 @@
 import type { MeterEvent } from '../../api/types'
-import { eventLabel } from '../../lib/chartData'
 import { formatDateTime } from '../../lib/format'
+import { eventLabel } from '../../lib/labels'
 import { Badge } from '../atoms/Badge'
 import { Card } from '../atoms/Card'
 
@@ -8,9 +8,9 @@ export function EventTimeline({ events }: { events: MeterEvent[] }) {
   const ordered = [...events].sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp))
   return (
     <Card className="flex flex-col gap-3">
-      <h2 className="text-base font-semibold text-text">Events</h2>
+      <h2 className="text-base font-semibold text-text">Eventos</h2>
       {ordered.length === 0 ? (
-        <p className="text-sm text-muted">No events recorded for this meter.</p>
+        <p className="text-sm text-muted">No hay eventos registrados para este medidor.</p>
       ) : (
         <ol className="flex flex-col border-l-2 border-border pl-4">
           {ordered.map((event) => (

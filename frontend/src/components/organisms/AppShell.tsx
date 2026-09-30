@@ -34,7 +34,7 @@ function Sidebar({ navItems }: { navItems: NavItem[] }) {
       <div className="flex h-16 items-center px-5 text-white">
         <Brand />
       </div>
-      <nav aria-label="Primary" className="flex flex-1 flex-col gap-1 px-3 py-4">
+      <nav aria-label="Principal" className="flex flex-1 flex-col gap-1 px-3 py-4">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -51,7 +51,7 @@ function Sidebar({ navItems }: { navItems: NavItem[] }) {
           </NavLink>
         ))}
       </nav>
-      <p className="px-5 pb-5 text-xs text-sidebar-text/60">AI energy analytics</p>
+      <p className="px-5 pb-5 text-xs text-sidebar-text/60">Analítica energética con IA</p>
     </aside>
   )
 }
@@ -69,7 +69,7 @@ function Topbar({ username, onLogout }: { username: string; onLogout: () => void
         <span className="hidden text-sm font-medium text-text sm:inline">{username}</span>
         <Button variant="ghost" onClick={onLogout} className="h-9 px-3">
           <LogoutIcon width={16} height={16} />
-          Sign out
+          Cerrar sesión
         </Button>
       </div>
     </header>
@@ -84,7 +84,7 @@ export function AppShell({ navItems, username, onLogout, children }: AppShellPro
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:shadow-raised"
       >
-        Skip to content
+        Saltar al contenido
       </a>
       <Sidebar navItems={navItems} />
       <div className="flex min-w-0 flex-1 flex-col">

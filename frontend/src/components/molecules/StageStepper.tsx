@@ -1,7 +1,8 @@
 import type { AnalysisStatus } from '../../api/types'
+import { STAGE_ORDER, stageLabel } from '../../lib/labels'
 
-/** The pipeline stages in execution order; the API reports the current one as a 1-based `stage_index`. */
-export const STAGES = ['Readings', 'Baseline', 'Detection', 'Correlation', 'Events', 'Explanation', 'Recommendation'] as const
+/** The pipeline stage names in execution order; the API reports the current one as a 1-based `stage_index`. */
+export const STAGES = STAGE_ORDER.map(stageLabel)
 
 type StepState = 'done' | 'current' | 'failed' | 'pending'
 
@@ -11,7 +12,7 @@ export interface StageStepperProps {
   status: AnalysisStatus
 }
 
-const stateText: Record<StepState, string> = { done: 'done', current: 'in progress', failed: 'failed', pending: 'pending' }
+const stateText: Record<StepState, string> = { done: 'completada', current: 'en curso', failed: 'fallida', pending: 'pendiente' }
 
 function stepState(position: number, stageIndex: number, status: AnalysisStatus): StepState {
   if (status === 'done') return 'done'
@@ -55,7 +56,7 @@ function Marker({ state, position }: { state: StepState; position: number }) {
 /** Seven named stages with a state each; the state is spelled out in text, never color alone. */
 export function StageStepper({ stageIndex, status }: StageStepperProps) {
   return (
-    <ol aria-label="Analysis stages" className="grid gap-2 sm:grid-cols-7">
+    <ol aria-label="Etapas del análisis" className="grid gap-2 sm:grid-cols-7">
       {STAGES.map((name, i) => {
         const position = i + 1
         const state = stepState(position, stageIndex, status)

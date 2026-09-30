@@ -3,7 +3,6 @@ import {
   METRICS,
   clipSeries,
   deltaPct,
-  eventLabel,
   latestDayTotals,
   summarizeSeries,
   toChartSeries,
@@ -34,11 +33,11 @@ const metric = (key: MetricKey) => METRICS.find((m) => m.key === key)!
 
 describe('METRICS', () => {
   it('describes the four charts in order with units', () => {
-    expect(METRICS.map((m) => [m.key, m.unit])).toEqual([
-      ['kwh', 'kWh'],
-      ['voltage', 'V'],
-      ['current', 'A'],
-      ['pf', 'PF'],
+    expect(METRICS.map((m) => [m.key, m.title, m.unit])).toEqual([
+      ['kwh', 'Consumo', 'kWh'],
+      ['voltage', 'Voltaje', 'V'],
+      ['current', 'Corriente', 'A'],
+      ['pf', 'Factor de potencia', 'FP'],
     ])
   })
 })
@@ -93,8 +92,8 @@ describe('toReferenceAreas', () => {
     expect(toReferenceAreas([])).toEqual([])
   })
   it('keeps the label of a window so the chart can name it in text', () => {
-    const [area] = toReferenceAreas([{ start: '2026-09-12T14:00:00Z', end: '2026-09-13T02:00:00Z', severity: 'MEDIUM', label: 'Level shift up' }])
-    expect(area).toMatchObject({ tone: 'sev-medium', label: 'Level shift up' })
+    const [area] = toReferenceAreas([{ start: '2026-09-12T14:00:00Z', end: '2026-09-13T02:00:00Z', severity: 'MEDIUM', label: 'Cambio de nivel al alza' }])
+    expect(area).toMatchObject({ tone: 'sev-medium', label: 'Cambio de nivel al alza' })
   })
 })
 
@@ -105,17 +104,9 @@ describe('toReferenceLines', () => {
   ]
   it('maps events to labelled markers in time order', () => {
     expect(toReferenceLines(events)).toEqual([
-      { x: Date.parse('2026-09-11T08:00:00Z'), label: 'Operational change' },
-      { x: Date.parse('2026-09-12T14:00:00Z'), label: 'Unknown' },
+      { x: Date.parse('2026-09-11T08:00:00Z'), label: 'Cambio operativo' },
+      { x: Date.parse('2026-09-12T14:00:00Z'), label: 'Desconocido' },
     ])
-  })
-})
-
-describe('eventLabel', () => {
-  it('humanizes raw event types', () => {
-    expect(eventLabel('SCHEDULED_OUTAGE')).toBe('Scheduled outage')
-    expect(eventLabel('data_quality')).toBe('Data quality')
-    expect(eventLabel('UNKNOWN')).toBe('Unknown')
   })
 })
 
@@ -184,11 +175,11 @@ describe('METRICS axis precision', () => {
   it('formats y-axis ticks with that precision', () => {
     expect(formatYTick(metric('current'), 525)).toBe('525')
     expect(formatYTick(metric('current'), 524.6)).toBe('525')
-    expect(formatYTick(metric('pf'), 0.9)).toBe('0.90')
+    expect(formatYTick(metric('pf'), 0.9)).toBe('0,90')
     expect(formatYTick(metric('voltage'), 230)).toBe('230')
-    expect(formatYTick(metric('voltage'), 229.5)).toBe('229.5')
+    expect(formatYTick(metric('voltage'), 229.5)).toBe('229,5')
     expect(formatYTick(metric('kwh'), 90)).toBe('90')
-    expect(formatYTick(metric('kwh'), 0.5)).toBe('0.5')
+    expect(formatYTick(metric('kwh'), 0.5)).toBe('0,5')
   })
 
   it('asks the chart for whole-number ticks only for current', () => {

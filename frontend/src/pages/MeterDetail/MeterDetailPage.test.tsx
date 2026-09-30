@@ -101,29 +101,29 @@ describe('MeterDetailPage', () => {
     mockApi(happy())
     renderAt('/meters/M-109')
 
-    expect(await screen.findByRole('group', { name: 'Total consumption' })).toHaveTextContent('2,180.0 kWh')
+    expect(await screen.findByRole('group', { name: 'Consumo total' })).toHaveTextContent('2.180,0 kWh')
     expect(screen.getByRole('heading', { level: 1, name: /M-109/ })).toBeInTheDocument()
     expect(await screen.findByText('Unexplained rise')).toBeInTheDocument()
     expect(await screen.findAllByRole('img')).toHaveLength(4)
-    expect(screen.getByRole('img', { name: /Consumption \(kWh\).*baseline 22\.0 kWh \(\+104\.5%\)/ })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /Consumo \(kWh\).*baseline 22,0 kWh \(\+104,5%\)/ })).toBeInTheDocument()
   })
 
   it('shows the meter anomalies and highlights their window on the charts', async () => {
     mockApi(happy())
     renderAt('/meters/M-109')
 
-    const section = await screen.findByRole('region', { name: 'Anomalies for this meter' })
-    expect(await within(section).findByRole('link', { name: 'Investigate M-109' })).toHaveAttribute('href', '/anomalies/an-1')
-    expect(screen.getByRole('link', { name: 'View findings' })).toHaveAttribute('href', '/anomalies?meter_id=M-109')
-    for (const chart of await screen.findAllByRole('img')) expect(chart).toHaveAccessibleName(/anomaly window highlighted: Level shift up, High severity/)
+    const section = await screen.findByRole('region', { name: 'Anomalías de este medidor' })
+    expect(await within(section).findByRole('link', { name: 'Investigar M-109' })).toHaveAttribute('href', '/anomalies/an-1')
+    expect(screen.getByRole('link', { name: 'Ver hallazgos' })).toHaveAttribute('href', '/anomalies?meter_id=M-109')
+    for (const chart of await screen.findAllByRole('img')) expect(chart).toHaveAccessibleName(/ventana de anomalía resaltada: Cambio de nivel al alza, severidad alta/)
   })
 
   it('keeps the rest of the page when only the anomalies fail', async () => {
     mockApi({ ...happy(), 'GET /api/anomalies?meter_id=M-109': [jsonResponse(500, { error: { code: 'internal', message: 'anomalies down' } })] })
     renderAt('/meters/M-109')
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('anomalies down')
-    expect(screen.getByRole('group', { name: 'Total consumption' })).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Ocurrió un error interno en el servidor')
+    expect(screen.getByRole('group', { name: 'Consumo total' })).toBeInTheDocument()
     expect(await screen.findAllByRole('img')).toHaveLength(4)
   })
 
@@ -145,23 +145,23 @@ describe('MeterDetailPage', () => {
       'GET /api/meters/M-999/events': [jsonResponse(404, { error: { code: 'not_found', message: 'meter not found' } })],
     })
     renderAt('/meters/M-999')
-    expect(await screen.findByText('Meter not found')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Back to meters' })).toBeInTheDocument()
+    expect(await screen.findByText('Medidor no encontrado')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Volver a medidores' })).toBeInTheDocument()
   })
 
   it('shows the error with Retry and recovers', async () => {
     mockApi({ ...happy(), 'GET /api/meters/M-109': [new TypeError('Failed to fetch'), jsonResponse(200, meter)] })
     renderAt('/meters/M-109')
-    expect(await screen.findByRole('alert')).toHaveTextContent('Cannot reach the server')
-    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
-    expect(await screen.findByRole('group', { name: 'Total consumption' })).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo conectar con el servidor')
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
+    expect(await screen.findByRole('group', { name: 'Consumo total' })).toBeInTheDocument()
   })
 
   it('keeps the meter visible when only the readings fail', async () => {
     mockApi({ ...happy(), 'GET /api/meters/M-109/readings': [jsonResponse(500, { error: { code: 'internal', message: 'readings down' } })] })
     renderAt('/meters/M-109')
-    expect(await screen.findByRole('group', { name: 'Total consumption' })).toBeInTheDocument()
-    expect(await screen.findByRole('alert')).toHaveTextContent('readings down')
+    expect(await screen.findByRole('group', { name: 'Consumo total' })).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Ocurrió un error interno en el servidor')
   })
 
   it('runs the analysis, shows its progress and refreshes the meter when it finishes', async () => {
@@ -170,17 +170,17 @@ describe('MeterDetailPage', () => {
       'POST /api/ai/analyze': [jsonResponse(202, { id: 'a-1' })],
       'GET /api/ai/analysis/a-1': [
         jsonResponse(200, runningAnalysis),
-        jsonResponse(200, { ...runningAnalysis, status: 'done', stage: 'recommendation', stage_index: 7, progress: 100, summary: { total: 1, priority_attention: 1, meters_analyzed: 12, by_type: {}, by_severity: {}, avg_confidence: 0.9, text: '1 anomaly detected · 1 requires priority attention' } }),
+        jsonResponse(200, { ...runningAnalysis, status: 'done', stage: 'recommendation', stage_index: 7, progress: 100, summary: { total: 1, priority_attention: 1, meters_analyzed: 12, by_type: {}, by_severity: {}, avg_confidence: 0.9, text: '1 anomalía detectada · 1 requiere atención prioritaria' } }),
       ],
     })
     renderAt('/meters/M-109')
-    await screen.findByRole('group', { name: 'Total consumption' })
+    await screen.findByRole('group', { name: 'Consumo total' })
     expect(calls('GET /api/meters/M-109')).toBe(1)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Run AI Analysis' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Ejecutar análisis IA' }))
 
-    expect(await screen.findByRole('progressbar', { name: 'Analysis progress' })).toHaveAttribute('aria-valuenow', '14')
-    expect(await screen.findByText('1 anomaly detected · 1 requires priority attention')).toBeInTheDocument()
+    expect(await screen.findByRole('progressbar', { name: 'Progreso del análisis' })).toHaveAttribute('aria-valuenow', '14')
+    expect(await screen.findByText('1 anomalía detectada · 1 requiere atención prioritaria')).toBeInTheDocument()
     expect(calls('POST /api/ai/analyze')).toBe(1)
     await waitFor(() => expect(calls('GET /api/meters/M-109')).toBe(2))
   })
@@ -193,8 +193,8 @@ describe('MeterDetailPage', () => {
     })
     renderAt('/meters/M-109')
 
-    expect(await screen.findByRole('progressbar', { name: 'Analysis progress' })).toBeInTheDocument()
-    expect(await screen.findByRole('button', { name: /Analyzing/ })).toBeDisabled()
+    expect(await screen.findByRole('progressbar', { name: 'Progreso del análisis' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Analizando/ })).toBeDisabled()
     expect(calls('POST /api/ai/analyze')).toBe(0)
   })
 })

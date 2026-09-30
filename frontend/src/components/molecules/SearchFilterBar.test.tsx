@@ -19,29 +19,29 @@ function setup(overrides: Partial<SearchFilterBarProps> = {}) {
 describe('SearchFilterBar', () => {
   it('shows the current values', () => {
     setup({ query: '109', status: 'Critical', sort: 'variation:desc' })
-    expect(screen.getByRole('searchbox', { name: 'Search meters' })).toHaveValue('109')
-    expect(screen.getByRole('combobox', { name: 'Status' })).toHaveValue('Critical')
-    expect(screen.getByRole('combobox', { name: 'Sort by' })).toHaveValue('variation:desc')
+    expect(screen.getByRole('searchbox', { name: 'Buscar medidores' })).toHaveValue('109')
+    expect(screen.getByRole('combobox', { name: 'Estado' })).toHaveValue('Critical')
+    expect(screen.getByRole('combobox', { name: 'Ordenar por' })).toHaveValue('variation:desc')
   })
 
   it('reports each typed character of the search', async () => {
     const props = setup()
-    await userEvent.type(screen.getByRole('searchbox', { name: 'Search meters' }), '10')
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar medidores' }), '10')
     expect(props.onQueryChange).toHaveBeenNthCalledWith(1, '1')
     expect(props.onQueryChange).toHaveBeenNthCalledWith(2, '0')
   })
 
   it('reports the chosen status and sort', async () => {
     const props = setup()
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Status' }), 'Alert')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Estado' }), 'Alert')
     expect(props.onStatusChange).toHaveBeenCalledWith('Alert')
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Sort by' }), 'kwh:desc')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Ordenar por' }), 'kwh:desc')
     expect(props.onSortChange).toHaveBeenCalledWith('kwh:desc')
   })
 
   it('offers all statuses plus an "All" choice', () => {
     setup()
     const names = screen.getAllByRole('option').map((o) => o.textContent)
-    expect(names).toEqual(expect.arrayContaining(['All statuses', 'OK', 'Alert', 'Critical']))
+    expect(names).toEqual(expect.arrayContaining(['Todos los estados', 'Normal', 'Alerta', 'Crítico']))
   })
 })

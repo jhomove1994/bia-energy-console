@@ -26,9 +26,9 @@ function renderApp(path = '/login') {
 }
 
 async function signIn(username: string, password: string) {
-  await userEvent.type(screen.getByLabelText('Username'), username)
-  await userEvent.type(screen.getByLabelText('Password'), password)
-  await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+  await userEvent.type(screen.getByLabelText('Usuario'), username)
+  await userEvent.type(screen.getByLabelText('Contraseña'), password)
+  await userEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
 }
 
 beforeEach(() => {
@@ -55,9 +55,9 @@ describe('LoginPage', () => {
 
     await signIn('admin', 'wrong')
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Incorrect username or password.')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Usuario o contraseña incorrectos.')
     expect(screen.queryByText('dashboard screen')).not.toBeInTheDocument()
-    expect(screen.getByLabelText('Username')).toBeInTheDocument()
+    expect(screen.getByLabelText('Usuario')).toBeInTheDocument()
     expect(getToken()).toBeNull()
   })
 
@@ -67,7 +67,7 @@ describe('LoginPage', () => {
 
     await signIn('admin', 'admin123')
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Cannot reach the server')
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo conectar con el servidor')
   })
 
   it('goes straight to the dashboard when already signed in', () => {

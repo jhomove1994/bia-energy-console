@@ -63,13 +63,13 @@ describe('useAuth', () => {
     expect(init?.body).toBe('{"username":"admin","password":"admin123"}')
   })
 
-  it('wrong credentials reject with the API message and keep the user signed out', async () => {
+  it('wrong credentials reject with the Spanish message and keep the user signed out', async () => {
     fetchMock.mockResolvedValue(jsonResponse(401, { error: { code: 'invalid_credentials', message: 'invalid username or password' } }))
     renderProbe()
 
     await userEvent.click(screen.getByRole('button', { name: 'bad login' }))
 
-    await vi.waitFor(() => expect(document.title).toBe('invalid username or password'))
+    await vi.waitFor(() => expect(document.title).toBe('Usuario o contraseña incorrectos.'))
     expect(screen.getByText('signed out')).toBeInTheDocument()
     expect(getToken()).toBeNull()
   })

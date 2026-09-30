@@ -22,9 +22,9 @@ export function ActionCard({ action, code, rank, type }: ActionCardProps) {
         <div className="flex items-center justify-between gap-3">
           <h2 id="recommended-action-heading" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
             <SparklesIcon aria-hidden="true" width={16} height={16} className="text-primary-strong" />
-            Recommended action
+            Acción recomendada
           </h2>
-          <span className="tabular text-xs font-semibold text-muted">Priority #{rank}</span>
+          <span className="tabular text-xs font-semibold text-muted">Prioridad #{rank}</span>
         </div>
         <p className="text-lg font-semibold leading-snug text-text">{action}</p>
         <p>

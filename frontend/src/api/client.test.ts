@@ -61,7 +61,7 @@ describe('apiFetch', () => {
     const error = await apiFetch('/api/meters/X').catch((e: unknown) => e)
 
     expect(error).toBeInstanceOf(ApiError)
-    expect(error).toMatchObject({ status: 404, code: 'not_found', message: 'meter not found' })
+    expect(error).toMatchObject({ status: 404, code: 'not_found', message: 'No se encontró el recurso solicitado.', detail: 'meter not found' })
   })
 
   it('falls back to a generic ApiError when the error body is not JSON', async () => {
@@ -69,7 +69,7 @@ describe('apiFetch', () => {
 
     const error = await apiFetch('/api/meters').catch((e: unknown) => e)
 
-    expect(error).toMatchObject({ status: 502, code: 'http_502' })
+    expect(error).toMatchObject({ status: 502, code: 'http_502', message: 'El servidor no pudo completar la solicitud (estado 502).' })
   })
 
   it('maps a network failure to ApiError with code "network"', async () => {
@@ -78,7 +78,7 @@ describe('apiFetch', () => {
     const error = await apiFetch('/api/meters').catch((e: unknown) => e)
 
     expect(error).toBeInstanceOf(ApiError)
-    expect(error).toMatchObject({ status: 0, code: 'network' })
+    expect(error).toMatchObject({ status: 0, code: 'network', message: 'No se pudo conectar con el servidor. Revise su conexión e intente de nuevo.' })
   })
 })
 

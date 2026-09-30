@@ -22,10 +22,10 @@ describe('MetersTable', () => {
   it('lists one row per meter with kWh, variation and status', () => {
     renderTable()
     const row = screen.getByRole('row', { name: /M-109/ })
-    expect(within(row).getByText('12,345.7 kWh')).toBeInTheDocument()
-    expect(within(row).getByText('+110.5%')).toBeInTheDocument()
-    expect(within(row).getByText('Critical')).toBeInTheDocument()
-    expect(within(screen.getByRole('row', { name: /M-101/ })).getByText('-0.3%')).toBeInTheDocument()
+    expect(within(row).getByText('12.345,7 kWh')).toBeInTheDocument()
+    expect(within(row).getByText('+110,5%')).toBeInTheDocument()
+    expect(within(row).getByText('Crítico')).toBeInTheDocument()
+    expect(within(screen.getByRole('row', { name: /M-101/ })).getByText('-0,3%')).toBeInTheDocument()
   })
 
   it('links each meter id to its detail page', () => {
@@ -41,7 +41,7 @@ describe('MetersTable', () => {
 
   it('labels the columns', () => {
     renderTable()
-    for (const name of ['Meter', 'Total consumption', 'Daily variation', 'Status']) {
+    for (const name of ['Medidor', 'Consumo total', 'Variación diaria', 'Estado']) {
       expect(screen.getByRole('columnheader', { name })).toBeInTheDocument()
     }
   })
