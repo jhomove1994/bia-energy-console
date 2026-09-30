@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import type { DashboardSummary } from '../api/types'
-import { demoAnomalyList } from '../test/fixtures'
+import { demoAnomalies, demoAnomalyList } from '../test/fixtures'
 import { createTestQueryClient, jsonResponse } from '../test/utils'
 import { AppProviders } from './providers'
 import { AppRoutes, routerFuture } from './router'
@@ -57,6 +57,7 @@ beforeEach(() => {
     }
     if (key === 'GET /api/ai/analysis/latest') return jsonResponse(204)
     if (key === 'GET /api/anomalies') return jsonResponse(200, demoAnomalyList())
+    if (key === 'GET /api/anomalies/an-2') return jsonResponse(200, demoAnomalies()[1])
     throw new Error(`unexpected request ${key}`)
   })
 })
@@ -159,5 +160,16 @@ describe('anomalies routes', () => {
     expect(currentPath().textContent).toBe('/anomalies')
     expect(screen.getByRole('link', { name: 'AI Anomalies' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('link', { name: 'Dashboard' })).not.toHaveAttribute('aria-current')
+  })
+
+  it('opens an investigation from its row and keeps AI Anomalies current', async () => {
+    window.localStorage.setItem('energy.token', 'tok')
+    renderAt('/anomalies')
+
+    await userEvent.click(await screen.findByRole('link', { name: 'Investigate M-112' }))
+
+    expect(currentPath().textContent).toBe('/anomalies/an-2')
+    expect(await screen.findByRole('heading', { level: 1, name: /M-112/ })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'AI Anomalies', current: 'page' })).toBeInTheDocument()
   })
 })

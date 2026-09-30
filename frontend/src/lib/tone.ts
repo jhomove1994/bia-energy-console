@@ -1,4 +1,4 @@
-import type { SeverityToken, StatusToken, TypeToken } from './status'
+import type { SeverityToken, StatusToken, TypeToken, VariationTone } from './status'
 
 export type Tone = SeverityToken | TypeToken | StatusToken | 'neutral'
 
@@ -32,4 +32,11 @@ export const toneDot: Record<Tone, string> = {
   'status-alert': 'bg-status-alert',
   'status-critical': 'bg-status-critical',
   neutral: 'bg-muted',
+}
+
+/** Text emphasis of a variation figure (daily variation, delta against the baseline). */
+export const variationClass: Record<VariationTone, string> = {
+  high: 'font-semibold text-sev-high-ink',
+  medium: 'font-semibold text-sev-medium-ink',
+  none: 'text-text',
 }

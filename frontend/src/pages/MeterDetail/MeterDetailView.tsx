@@ -12,9 +12,8 @@ import { EventTimeline } from '../../components/organisms/EventTimeline'
 import { RunAnalysisFeedback } from '../../components/organisms/RunAnalysisFeedback'
 import { latestDayTotals } from '../../lib/chartData'
 import { formatDateTime, formatKwh, formatSignedPercent } from '../../lib/format'
+import type { SectionState } from '../../lib/section'
 import { variationTone } from '../../lib/status'
-
-export type SectionState<T> = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; data: T }
 
 export interface MeterDetailViewProps {
   meterId: string

@@ -1,6 +1,7 @@
 import { Navigate, useRoutes, type RouteObject } from 'react-router-dom'
 import { AnomaliesPage } from '../pages/Anomalies/AnomaliesPage'
 import { DashboardPage } from '../pages/Dashboard/DashboardPage'
+import { InvestigationPage } from '../pages/Investigation/InvestigationPage'
 import { LoginPage } from '../pages/Login/LoginPage'
 import { MeterDetailPage } from '../pages/MeterDetail/MeterDetailPage'
 import { MetersPage } from '../pages/Meters/MetersPage'
@@ -22,6 +23,7 @@ export const routes: RouteObject[] = [
           { path: '/meters', element: <MetersPage /> },
           { path: '/meters/:meterId', element: <MeterDetailPage /> },
           { path: '/anomalies', element: <AnomaliesPage /> },
+          { path: '/anomalies/:id', element: <InvestigationPage /> },
         ],
       },
     ],

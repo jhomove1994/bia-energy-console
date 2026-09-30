@@ -3,16 +3,11 @@ import { ApiError } from '../../api/client'
 import { useAnalysisJob } from '../../hooks/useAnalysisJob'
 import { useMeterEvents, useMeterReadings } from '../../hooks/useMeterReadings'
 import { useMeter } from '../../hooks/useMeters'
-import { MeterDetailView, type SectionState } from './MeterDetailView'
+import { toSection } from '../../lib/section'
+import { MeterDetailView } from './MeterDetailView'
 
 function describe(error: unknown): string {
   return error instanceof ApiError ? error.message : 'Unexpected error'
-}
-
-function section<T>(q: { isPending: boolean; isError: boolean; error: unknown; data: T | undefined }): SectionState<T> {
-  if (q.isPending) return { status: 'loading' }
-  if (q.isError) return { status: 'error', message: describe(q.error) }
-  return { status: 'ready', data: q.data as T }
 }
 
 /** Container: the three queries start together (parallel), the view only receives props. */
@@ -31,8 +26,8 @@ export function MeterDetailPage() {
       state={meter.isPending ? 'loading' : notFound ? 'not-found' : meter.isError ? 'error' : 'ready'}
       meter={meter.data}
       errorMessage={meter.isError ? describe(meter.error) : undefined}
-      readings={section(readings)}
-      events={section(events)}
+      readings={toSection(readings)}
+      events={toSection(events)}
       onRetry={() => {
         if (meter.isError) void meter.refetch()
         if (readings.isError) void readings.refetch()

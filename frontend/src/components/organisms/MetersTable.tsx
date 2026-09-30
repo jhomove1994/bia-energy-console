@@ -1,15 +1,10 @@
 import { Link } from 'react-router-dom'
 import type { MeterRow } from '../../api/types'
 import { formatKwh, formatSignedPercent } from '../../lib/format'
-import { variationTone, type VariationTone } from '../../lib/status'
+import { variationTone } from '../../lib/status'
+import { variationClass } from '../../lib/tone'
 import { Card } from '../atoms/Card'
 import { StatusPill } from '../molecules/StatusPill'
-
-const variationClass: Record<VariationTone, string> = {
-  high: 'font-semibold text-sev-high-ink',
-  medium: 'font-semibold text-sev-medium-ink',
-  none: 'text-text',
-}
 
 const th = 'px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted'
 const thRight = `${th} text-right`
