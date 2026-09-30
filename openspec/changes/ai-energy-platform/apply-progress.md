@@ -200,5 +200,65 @@ API (all pure): `Correlate(signals, cfg) []Incident` (any number of meters, orde
 - A stable-ratio drift is data quality only when the ratio run is a seed (promoted orphan); attached to a consumption incident it is corroboration only, which keeps M-109 REAL.
 - Size: slice 4a adds 1,235 lines across 7 files (about 800 in tests) in 4 commits. `size:exception` accepted for all PRs.
 
+## Batch 5: Slice 4b (complete)
+
+Completed tasks: 4.5 - 4.15 (67/125 overall). Slice 4 is complete (4.1 - 4.15).
+
+### Slice 4b (branch `feat/04b-engine-score-dataset`, base `feat/04a-engine-correlate-classify`)
+
+Commits (work units):
+| Hash | Message |
+|------|---------|
+| 024f9e5 | feat(engine): score severity, confidence and priority with evidence items (4.5, 4.6) |
+| 88d1ebc | feat(engine): map type, direction and kind to a recommended action (4.7, 4.8) |
+| 1dc8026 | feat(explain): render reasons and actions offline with text templates (4.7, 4.8) |
+| 8f00432 | feat(engine): chain detection to ranking in Analyze with a stage hook (4.9, 4.10) |
+| 519dbf8 | test(engine): validate the demo dataset outcomes, silence, shift and rename invariance (4.11, 4.12) |
+| 8474ea5 | test(engine): guard the engine sources against meter and date literals (4.13) |
+| (docs) | docs: document every engine threshold with its dataset evidence (4.14) and progress records |
+
+API (all pure): `Band`, `SeverityScore(raw, type, cfg)`, `Confidence`, `ConfidenceLabel`, `Priority(sev, conf, type)`, `Rank(as)`, `Score(Classified, series, baseline, cfg) domain.Anomaly`, `Recommend(type, sign, kind)`, `Detect(series, b, cfg)`, `Analyze(Input, cfg, hook) Result`. `app.Explainer` port plus `adapters/explain.Template` (`New()`).
+
+### TDD Cycle Evidence (slice 4b)
+| Task | Test file | RED (observed) | GREEN | TRIANGULATE | REFACTOR |
+|------|-----------|----------------|-------|-------------|----------|
+| 4.5/4.6 score | `engine/score_test.go` | `undefined: Band, SeverityScore` build failure (a first attempt also failed on a helper name clash with `near`; helper renamed `within`) | `ok energy/internal/engine` on the first run | bands 70/69/40/39, caps 85->69 and 55->39, cap follows configured bands, confidence 1.2->0.98 and label 0.84 Medium, exact priorities 97.5/88.2/33.8/5.7, REAL beats DQ, ranking under 3 input permutations with tie-breaks, REAL consumption numbers, six-field evidence items, event clarity (explained 1.0 vs UNKNOWN 0.5), DQ score/confidence, DQ event bonus, gaps and status evidence, pattern evidence detail | none needed |
+| 4.7/4.8 recommend | `engine/recommend_test.go` | `undefined: Recommend` | ok | 11 (type, sign, kind) cases, one distinct code per type | none |
+| 4.7/4.8 explainer | `adapters/explain/template_test.go` | `undefined: app.Explainer` | ok on the first run | 7 action codes non-empty and distinct, reasons distinct per type, no `<no value>`/`{{`/`%!`/`<nil>`/`NaN` on empty and full anomalies, REAL reason cites 42.0/20.0/+109.4%/58 h/start and states no event explains, event kept as context, recovery time, DQ jump counts, deterministic across renders and instances, unknown action code falls back | none |
+| 4.9/4.10 Analyze | `engine/engine_test.go` | `undefined: Input` build failure; first GREEN run failed on my own fixture (the shift ended before the series end, so it recovered and became FALSE_POSITIVE); fixture now runs to the series end | ok | ranked REAL then EXPLAINABLE, short series skipped, 5 identical runs, reversed input equal and caller slice untouched, hook once per stage in order, no findings, `HourlyDevPct` 0.60 keeps +100% and drops +47% | none |
+| 4.11 dataset | `engine/dataset_test.go` (package `engine_test`) | Green on the first run (the engine already matched the design). Mutation check as RED evidence: `RatioStandaloneMinHours: 1` made 4 of 9 tests fail (8 anomalies, false DQ incidents on two healthy meters); config restored with `git checkout` | ok | four ranked outcomes and kinds/actions, related events, score ranges, 8 healthy meters silent, M-112 without its DQ event, +30 days, every meter renamed in reverse lexical order, summary 4/2, identical runs | none |
+| 4.12 calibration | n/a | n/a | No change needed: defaults from design 2.2 pass | n/a | n/a |
+| 4.13 guard | `engine/guard_test.go` | Temporary comment with a meter id and a date in `engine.go` failed the test with the expected messages; comment removed | ok | scans every non-test `*.go` (at least 10 files) | none |
+| 4.14 doc | `docs/thresholds.md` | n/a | one row per Config field (35), per-meter numbers from design 2.2 and the final table | n/a | n/a |
+| 4.15 verify | n/a | n/a | vet clean, gofmt empty, all 9 packages ok, `rg 'M-\d+|2026-09-' backend/internal/engine --glob '!*_test.go'` no matches, `rg expected[_]results backend` no matches | n/a | done |
+
+### Work Unit Evidence (slice 4b)
+| Evidence | Value |
+|---|---|
+| Focused test command | `cd backend && go test ./internal/engine -run Dataset -count=1`: ok; full `go test ./... -count=1`: ok for 9 packages |
+| Runtime harness | Throwaway test (deleted, not committed) over `data/*.csv` printed the final table below |
+| Rollback boundary | `backend/internal/engine/{score,recommend,engine}.go` and tests, `backend/internal/adapters/explain/`, `Explainer` in `backend/internal/app/ports.go`, `docs/thresholds.md` |
+
+### Final dataset outcome (defaults, no calibration change)
+| Rank | Meter | Type | Kind | Severity | Confidence | Priority | Action |
+|------|-------|------|------|----------|------------|----------|--------|
+| 1 | M-109 | REAL_ANOMALY | LEVEL_SHIFT_UP | HIGH (100.0) | 0.975 | 97.5 | INSPECT_LOAD_INCREASE |
+| 2 | M-112 | DATA_QUALITY | DATA_INCONSISTENCY | HIGH (100.0) | 0.980 | 88.2 | OPEN_DQ_TICKET |
+| 3 | M-104 | EXPLAINABLE_ANOMALY | LEVEL_SHIFT_UP | MEDIUM (49.0) | 0.843 | 33.7 | UPDATE_BASELINE |
+| 4 | M-106 | FALSE_POSITIVE | SUSTAINED_DECREASE | LOW (34.7) | 0.858 | 5.7 | ACKNOWLEDGE_EXPECTED |
+
+Summary text: `4 anomalies detected · 2 require priority attention` (computed in the dataset test; `app/summary.go` is task 5.6).
+
+### Deviations / notes (slice 4b)
+- Calibration (4.12): no threshold changed. M-104 confidence is 0.843 and priority 33.7 (design walk-through estimated 0.846 and 33.8); M-106 severity 34.7 (design "about 36"). Both are within the walk-through's "about" numbers.
+- `Score` confidence effect term uses `HourlyDevPct` as the start and the span of the effect ramp (`(|effect| - dev) / dev`, design hardcodes 0.30 and 0.30); identical at the default, and it follows the override.
+- Scores are rounded: severity and priority to 1 decimal, confidence to 3 decimals; the band is read from the rounded severity so the displayed score and band always agree.
+- `Analyze` counts `MetersAnalyzed` as meters with enough history for a baseline (a skipped short series is not counted). The hook fires once per stage (baseline, detection, correlation, events, explanation, recommendation); `readings` belongs to the app. Aggregator `Detect(series, b, cfg)` is exported for the slice 5 runner.
+- The explainer formats every number to 1 decimal (including power factor, so 0.9 to 0.7); `Explainer` port added to `app/ports.go`; unknown action codes fall back to a generic text.
+- Summary (`app/summary.go`) stays in slice 5; the dataset test counts total and priority attention itself.
+- Evidence `event` item: `Observed` is the distance to the onset in hours, `Detail` is `TYPE: description`, `EventID` set.
+- Spec scenario "Override a threshold" on the full dataset: with `HourlyDevPct` 0.60 M-104 is still reported (its +47% day is an orphan daily-variation incident promoted by design 2.5, since `DailyVarPct` is 0.25), split into three incidents. The synthetic test proves the hourly gate itself; see risks in the return summary.
+- Size: slice 4b adds about 2,000 lines across 12 files (about 1,050 in tests, 190 in docs) in 7 commits. `size:exception` accepted for all PRs.
+
 ## Remaining
-Slices 4b - 9 (69 tasks) not started. Next: 4.5 onward (score, recommend, explainer, `Analyze`, dataset test, calibration, guard test, `docs/thresholds.md`).
+Slices 5 - 9 (58 tasks) not started. Next: 5.1 onward (analysis jobs, summary, anomalies API, status derivation).

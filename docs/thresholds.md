@@ -64,7 +64,7 @@ Every tunable engine parameter lives in `engine.Config` (`backend/internal/engin
 | Field | Default | Healthy-envelope evidence | Per-meter justification |
 |-------|---------|---------------------------|-------------------------|
 | `SevHigh` | 70 | Severity band boundary (HIGH from 70). | M-109 and M-112 score 100. |
-| `SevMedium` | 40 | Severity band boundary (MEDIUM from 40, LOW below). | M-104 scores 49.0 (MEDIUM, and an explained anomaly can never exceed 69); M-106 scores 34.7 and is forced LOW. |
+| `SevMedium` | 40 | Severity band boundary (MEDIUM from 40, LOW below). | M-104 scores 49.0 (MEDIUM, and an explained anomaly can never exceed 69); M-106 scores 34.7 (LOW; the forced-LOW cap of 39 is not even needed). |
 | `ConfCap` | 0.98 | Never claim certainty. | M-112 computes 1.0 and is reported at 0.98. |
 | `ConfHigh` | 0.85 | Confidence label High from 0.85. | M-109 0.975 and M-112 0.98 are High; M-104 0.843 is Medium. |
 | `ConfMedium` | 0.60 | Confidence label Medium from 0.60, Low below. | No incident falls below it. |
@@ -76,7 +76,7 @@ Every tunable engine parameter lives in `engine.Config` (`backend/internal/engin
 | 1 | M-109 | REAL_ANOMALY | HIGH (100) | 0.975 | 97.5 |
 | 2 | M-112 | DATA_QUALITY | HIGH (100) | 0.98 | 88.2 |
 | 3 | M-104 | EXPLAINABLE_ANOMALY | MEDIUM (49.0) | 0.843 | 33.7 |
-| 4 | M-106 | FALSE_POSITIVE | LOW (34.7, forced LOW) | 0.858 | 5.7 |
+| 4 | M-106 | FALSE_POSITIVE | LOW (34.7) | 0.858 | 5.7 |
 
 Summary: `4 anomalies detected · 2 require priority attention`.
 
