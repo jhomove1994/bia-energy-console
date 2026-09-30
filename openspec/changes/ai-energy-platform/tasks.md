@@ -13,15 +13,12 @@ Change: `ai-energy-platform` | Store: hybrid | Base branch: `main` | Design: `de
 | Delivery strategy | ask-on-risk |
 | Chain strategy | stacked-to-main |
 
-Decision needed before apply: No (resolved 2026-09-30: split slice 4 into 4a/4b; accept `size:exception` for slices 2, 3, 5)
+Decision needed before apply: No (resolved 2026-09-30: split slice 4 into 4a/4b; `size:exception` accepted for ALL PRs, see below)
 Chained PRs recommended: Yes
 Chain strategy: stacked-to-main
 400-line budget risk: High
 
-Slices likely above 400 authored lines after one honest slicing pass (candidates for `size:exception`, or an extra split if the maintainer prefers):
-- Slice 4 (~720): SPLIT (user decision) into 4a correlate + events + classify (~330) and 4b score + recommend + explainer + engine + dataset test (~390).
-- Slice 2 (~560), Slice 3 (~520), Slice 5 (~520): `size:exception` ACCEPTED by user; label the PRs accordingly.
-- Slices 6, 7, 8 (~430-480) and Slice 1 (~420), Slice 9 (~380): at the budget edge.
+Delivery decision (user, 2026-09-30): actual sizes run about 3.5x the forecasts (PR 1 = 1,463 authored lines; PR 2 = 2,854 added lines of which 1,459 are tests). The user ACCEPTED `size:exception` for ALL PRs. Review happens commit by commit, so every commit stays a small, cohesive work unit (behavior + tests together). The 4a/4b split of slice 4 stays.
 
 Do not shrink code, tests, or docs to fit the budget. Report overage instead.
 
@@ -103,23 +100,23 @@ Branch: `feat/02-read-api-auth` (base slice 1 branch). Forecast: ~560 lines (siz
 Spec coverage: meter-catalog (all, status always OK pre-analysis), auth-session (all), dashboard-summary (Before any analysis), anomaly-engine (Baseline per meter and hour of day, first half of Configurable parameters), platform-delivery (Automated verification for login/meters/detail/readings/dashboard endpoints).
 Design deviation D4: `engine/baseline.go` lives here.
 
-- [ ] 2.1 RED: `backend/internal/engine/baseline_test.go`: hour-of-day median/MAD over the first 7 days; MAD floor (`max(MAD, 3% median)`); `DailyKWh` = sum of hourly medians; `RatioMedian`; `Profile[24]`; meter with < 5 samples per hour is `insufficient_history` (skipped, not an anomaly); series shifted by 30 days gives identical baseline; no `time.Now` used.
-- [ ] 2.2 GREEN: `backend/internal/engine/config.go` (Config struct with baseline fields `BaselineDays=7 BaselineMinSamples=5 MADScale=1.4826 MADFloorPct=0.03` and `DefaultConfig()`) and `backend/internal/engine/baseline.go` (`BuildBaseline`), imports `domain` and stdlib only.
-- [ ] 2.3 Create `backend/internal/app/ports.go` with `MeterRepository`, `ReadingRepository`, `EventRepository`, `Clock`, and `MeterStatusSource` (returns per-meter status and anomaly counts; slice 5 supplies the real one; here a `NoAnalysis` default returns all OK).
-- [ ] 2.4 RED: `backend/internal/adapters/sqlite/read_repos_test.go`: `List`, `Exists`, `ByMeter` (ascending, `from`/`to` inclusive range), `AllByMeter` sorted by ts, `TotalKWh` equals the sum, events by meter, using a synthetic seeded temp DB.
-- [ ] 2.5 GREEN: read methods in `backend/internal/adapters/sqlite/{meters,readings,events}.go`.
-- [ ] 2.6 RED: `backend/internal/adapters/http/auth_test.go`: token round trip; tampered payload rejected; expired rejected; token issued before "restart" (new verifier, same secret) still valid; different secret rejected; compare uses constant time (function under test is `Verify`).
-- [ ] 2.7 GREEN: `backend/internal/adapters/http/auth.go` (`base64url(json{sub,exp}).base64url(HMAC-SHA256)`, `crypto/subtle`).
-- [ ] 2.8 RED: `backend/internal/adapters/http/auth_http_test.go` (httptest): login 200 `{token, expires_at}`, wrong password 401 with no token, malformed JSON 400, protected route without/malformed/tampered/expired token 401, valid token 200, `GET /api/health` public 200, panic in handler returns 500 JSON, startup log lines contain neither password nor secret.
-- [ ] 2.9 GREEN: `backend/internal/adapters/http/{router.go,middleware.go,errors.go,handlers_auth.go,handlers_health.go}` (stdlib `ServeMux` method patterns; chain `recover -> requestLog -> auth`; error shape `{"error":{"code","message"}}`).
-- [ ] 2.10 RED: `backend/internal/app/meter_service_test.go` with fake repos: list rows have `meter_id`, `last_reading_at`, `total_kwh`, `variation_pct`, `status`; variation = latest full day vs baseline `DailyKWh` (about +109% on a synthetic tripled day, within +-5% on a healthy one); status OK for all with `NoAnalysis`; `q` case-insensitive substring; invalid `status`/`sort` returns a typed validation error; detail includes findings count; unknown id returns `ErrNotFound`; readings carry `baseline_kwh`, range filter, inverted range error.
-- [ ] 2.11 GREEN: `backend/internal/app/meter_service.go` (uses `engine.BuildBaseline`).
-- [ ] 2.12 RED: `backend/internal/adapters/http/meters_http_test.go` (real sqlite temp DB seeded from a synthetic fixture generator in `backend/internal/adapters/http/testutil_test.go`): `GET /api/meters` 200 with 12 meters no name/location; `q=m-10` filter; `status=BROKEN` 400; `sort` and `order`; `GET /api/meters/{id}` 200 and 404; `/readings` full series ascending with `baseline_kwh`, day range returns exactly 24, unknown meter 404, inverted range 400, unparsable range 400; `/events` 200 and 404.
-- [ ] 2.13 GREEN: `backend/internal/adapters/http/{handlers_meters.go,dto.go}` (DTOs per naming resolutions above).
-- [ ] 2.14 RED: `backend/internal/app/dashboard_service_test.go` and endpoint test: `GET /api/dashboard/summary` before any analysis returns `meters_count`, `total_kwh` equal to the sum of all readings, `anomalies_count=0`, `high_priority_count=0`, and `aggregate_confidence`, `last_analysis`, `summary_text` all null.
-- [ ] 2.15 GREEN: `backend/internal/app/dashboard_service.go` (with an injectable `LatestDone` source defaulting to none) and `backend/internal/adapters/http/handlers_dashboard.go`.
-- [ ] 2.16 Wire HTTP server in `backend/cmd/api/main.go` (start listening only after seed completes; graceful shutdown).
-- [ ] 2.17 REFACTOR + verify: `gofmt -l backend`, `go vet ./...`, `go test ./... -count=1`; `rg -n "M-\d+" backend/internal/engine --glob '!*_test.go'` returns nothing.
+- [x] 2.1 RED: `backend/internal/engine/baseline_test.go`: hour-of-day median/MAD over the first 7 days; MAD floor (`max(MAD, 3% median)`); `DailyKWh` = sum of hourly medians; `RatioMedian`; `Profile[24]`; meter with < 5 samples per hour is `insufficient_history` (skipped, not an anomaly); series shifted by 30 days gives identical baseline; no `time.Now` used.
+- [x] 2.2 GREEN: `backend/internal/engine/config.go` (Config struct with baseline fields `BaselineDays=7 BaselineMinSamples=5 MADScale=1.4826 MADFloorPct=0.03` and `DefaultConfig()`) and `backend/internal/engine/baseline.go` (`BuildBaseline`), imports `domain` and stdlib only.
+- [x] 2.3 Create `backend/internal/app/ports.go` with `MeterRepository`, `ReadingRepository`, `EventRepository`, `Clock`, and `MeterStatusSource` (returns per-meter status and anomaly counts; slice 5 supplies the real one; here a `NoAnalysis` default returns all OK).
+- [x] 2.4 RED: `backend/internal/adapters/sqlite/read_repos_test.go`: `List`, `Exists`, `ByMeter` (ascending, `from`/`to` inclusive range), `AllByMeter` sorted by ts, `TotalKWh` equals the sum, events by meter, using a synthetic seeded temp DB.
+- [x] 2.5 GREEN: read methods in `backend/internal/adapters/sqlite/{meters,readings,events}.go`.
+- [x] 2.6 RED: `backend/internal/adapters/http/auth_test.go`: token round trip; tampered payload rejected; expired rejected; token issued before "restart" (new verifier, same secret) still valid; different secret rejected; compare uses constant time (function under test is `Verify`).
+- [x] 2.7 GREEN: `backend/internal/adapters/http/auth.go` (`base64url(json{sub,exp}).base64url(HMAC-SHA256)`, `crypto/subtle`).
+- [x] 2.8 RED: `backend/internal/adapters/http/auth_http_test.go` (httptest): login 200 `{token, expires_at}`, wrong password 401 with no token, malformed JSON 400, protected route without/malformed/tampered/expired token 401, valid token 200, `GET /api/health` public 200, panic in handler returns 500 JSON, startup log lines contain neither password nor secret.
+- [x] 2.9 GREEN: `backend/internal/adapters/http/{router.go,middleware.go,errors.go,handlers_auth.go,handlers_health.go}` (stdlib `ServeMux` method patterns; chain `recover -> requestLog -> auth`; error shape `{"error":{"code","message"}}`).
+- [x] 2.10 RED: `backend/internal/app/meter_service_test.go` with fake repos: list rows have `meter_id`, `last_reading_at`, `total_kwh`, `variation_pct`, `status`; variation = latest full day vs baseline `DailyKWh` (about +109% on a synthetic tripled day, within +-5% on a healthy one); status OK for all with `NoAnalysis`; `q` case-insensitive substring; invalid `status`/`sort` returns a typed validation error; detail includes findings count; unknown id returns `ErrNotFound`; readings carry `baseline_kwh`, range filter, inverted range error.
+- [x] 2.11 GREEN: `backend/internal/app/meter_service.go` (uses `engine.BuildBaseline`).
+- [x] 2.12 RED: `backend/internal/adapters/http/meters_http_test.go` (real sqlite temp DB seeded from a synthetic fixture generator in `backend/internal/adapters/http/testutil_test.go`): `GET /api/meters` 200 with 12 meters no name/location; `q=m-10` filter; `status=BROKEN` 400; `sort` and `order`; `GET /api/meters/{id}` 200 and 404; `/readings` full series ascending with `baseline_kwh`, day range returns exactly 24, unknown meter 404, inverted range 400, unparsable range 400; `/events` 200 and 404.
+- [x] 2.13 GREEN: `backend/internal/adapters/http/{handlers_meters.go,dto.go}` (DTOs per naming resolutions above).
+- [x] 2.14 RED: `backend/internal/app/dashboard_service_test.go` and endpoint test: `GET /api/dashboard/summary` before any analysis returns `meters_count`, `total_kwh` equal to the sum of all readings, `anomalies_count=0`, `high_priority_count=0`, and `aggregate_confidence`, `last_analysis`, `summary_text` all null.
+- [x] 2.15 GREEN: `backend/internal/app/dashboard_service.go` (with an injectable `LatestDone` source defaulting to none) and `backend/internal/adapters/http/handlers_dashboard.go`.
+- [x] 2.16 Wire HTTP server in `backend/cmd/api/main.go` (start listening only after seed completes; graceful shutdown).
+- [x] 2.17 REFACTOR + verify: `gofmt -l backend`, `go vet ./...`, `go test ./... -count=1`; `rg -n "M-\d+" backend/internal/engine --glob '!*_test.go'` returns nothing.
 
 ---
 
