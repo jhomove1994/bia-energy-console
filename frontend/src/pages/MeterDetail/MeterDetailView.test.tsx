@@ -1,9 +1,10 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactElement } from 'react'
 import { cloneElement } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import type { Analysis, MeterDetail, MeterEvent, ReadingPoint } from '../../api/types'
+import { makeAnomaly } from '../../test/fixtures'
 import { routerFuture } from '../../app/router'
 import { MeterDetailView, type MeterDetailViewProps } from './MeterDetailView'
 
@@ -62,6 +63,7 @@ function setup(overrides: Partial<MeterDetailViewProps> = {}) {
     meter,
     readings: { status: 'ready', data: readings },
     events: { status: 'ready', data: events },
+    anomalies: { status: 'ready', data: [] },
     onRetry: vi.fn(),
     onRun: vi.fn(),
     starting: false,
@@ -93,6 +95,49 @@ describe('MeterDetailView', () => {
     setup()
     expect(screen.getAllByRole('img')).toHaveLength(4)
     expect(screen.getByText('Unexplained rise')).toBeInTheDocument()
+  })
+
+  it('turns the open findings figure into a link to the filtered anomalies list', () => {
+    setup()
+    const kpi = screen.getByRole('group', { name: 'Open findings' })
+    expect(within(kpi).getByRole('link', { name: 'View findings' })).toHaveAttribute('href', '/anomalies?meter_id=M-109')
+  })
+
+  it('offers no link when the meter has no findings', () => {
+    setup({ meter: { ...meter, anomaly_count: 0 } })
+    expect(within(screen.getByRole('group', { name: 'Open findings' })).queryByRole('link')).not.toBeInTheDocument()
+  })
+
+  it('lists the anomalies of this meter with a link to each investigation', () => {
+    setup({ anomalies: { status: 'ready', data: [makeAnomaly()] } })
+    const section = screen.getByRole('region', { name: 'Anomalies for this meter' })
+    expect(within(section).getByText('Real anomaly')).toBeInTheDocument()
+    expect(within(section).getByText('Level shift up')).toBeInTheDocument()
+    expect(within(section).queryByRole('columnheader', { name: 'Meter' })).not.toBeInTheDocument()
+    expect(within(section).getByRole('link', { name: 'Investigate M-109' })).toHaveAttribute('href', '/anomalies/an-1')
+  })
+
+  it('says so when the latest analysis found nothing for the meter', () => {
+    setup()
+    expect(screen.getByRole('region', { name: 'Anomalies for this meter' })).toHaveTextContent('No anomalies in the latest analysis for this meter.')
+  })
+
+  it('highlights the anomaly windows on the charts', () => {
+    setup({ anomalies: { status: 'ready', data: [makeAnomaly()] } })
+    for (const chart of screen.getAllByRole('img')) expect(chart).toHaveAccessibleName(/1 anomaly window highlighted: Level shift up, High severity/)
+  })
+
+  it('shows a section error for the anomalies without hiding the meter or the charts', async () => {
+    const props = setup({ anomalies: { status: 'error', message: 'anomalies down' } })
+    expect(screen.getByRole('alert')).toHaveTextContent('anomalies down')
+    expect(screen.getAllByRole('img')).toHaveLength(4)
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(props.onRetry).toHaveBeenCalled()
+  })
+
+  it('shows a placeholder while the anomalies load', () => {
+    setup({ anomalies: { status: 'loading' } })
+    expect(screen.getByRole('status', { name: 'Loading anomalies' })).toBeInTheDocument()
   })
 
   it('shows the loading state', () => {

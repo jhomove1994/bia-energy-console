@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import type { Analysis, MeterDetail, MeterEvent, ReadingPoint } from '../../api/types'
+import type { Analysis, Anomaly, MeterDetail, MeterEvent, ReadingPoint } from '../../api/types'
 import { EmptyState } from '../../components/atoms/EmptyState'
 import { ErrorState } from '../../components/atoms/ErrorState'
 import { AlertIcon, ActivityIcon, BoltIcon, GaugeIcon } from '../../components/atoms/Icon'
@@ -7,6 +7,7 @@ import { Skeleton } from '../../components/atoms/Skeleton'
 import { KpiCard } from '../../components/molecules/KpiCard'
 import { RunAnalysisButton } from '../../components/molecules/RunAnalysisButton'
 import { StatusPill } from '../../components/molecules/StatusPill'
+import { AnomaliesTable } from '../../components/organisms/AnomaliesTable'
 import { ChartGrid } from '../../components/organisms/ChartGrid'
 import { EventTimeline } from '../../components/organisms/EventTimeline'
 import { RunAnalysisFeedback } from '../../components/organisms/RunAnalysisFeedback'
@@ -22,6 +23,8 @@ export interface MeterDetailViewProps {
   errorMessage?: string
   readings: SectionState<ReadingPoint[]>
   events: SectionState<MeterEvent[]>
+  /** Findings of the latest analysis for this meter. */
+  anomalies: SectionState<Anomaly[]>
   /** Refetches whatever failed. */
   onRetry: () => void
   onRun: () => void
@@ -66,14 +69,28 @@ function Summary({ meter, readings }: { meter: MeterDetail; readings: SectionSta
       <KpiCard
         label="Open findings"
         value={meter.anomaly_count}
-        caption={meter.anomaly_count === 0 ? 'None in the latest analysis' : 'From the latest analysis'}
+        caption={
+          meter.anomaly_count === 0 ? (
+            'None in the latest analysis'
+          ) : (
+            <Link to={`/anomalies?meter_id=${encodeURIComponent(meter.meter_id)}`} className="font-semibold text-primary-strong hover:underline">
+              View findings
+            </Link>
+          )
+        }
         icon={<AlertIcon />}
       />
     </div>
   )
 }
 
-export function MeterDetailView({ meterId, state, meter, errorMessage, readings, events, onRetry, onRun, starting, busy, analysis, runError }: MeterDetailViewProps) {
+/** Anomaly windows for the charts; empty while the findings load or fail. */
+function windowsOf(anomalies: SectionState<Anomaly[]>) {
+  if (anomalies.status !== 'ready') return []
+  return anomalies.data.map((a) => ({ start: a.window_start, end: a.window_end, severity: a.severity, label: a.anomaly }))
+}
+
+export function MeterDetailView({ meterId, state, meter, errorMessage, readings, events, anomalies, onRetry, onRun, starting, busy, analysis, runError }: MeterDetailViewProps) {
   if (state === 'not-found') {
     return (
       <EmptyState
@@ -88,6 +105,8 @@ export function MeterDetailView({ meterId, state, meter, errorMessage, readings,
       />
     )
   }
+
+  const windows = windowsOf(anomalies)
 
   return (
     <div className="flex flex-col gap-6">
@@ -112,13 +131,25 @@ export function MeterDetailView({ meterId, state, meter, errorMessage, readings,
         <>
           <Summary meter={meter} readings={readings} />
 
+          <section aria-labelledby="meter-anomalies-heading" className="flex flex-col gap-3">
+            <h2 id="meter-anomalies-heading" className="text-base font-semibold text-text">
+              Anomalies for this meter
+            </h2>
+            {anomalies.status === 'loading' && <Loading label="Loading anomalies" className="h-24" />}
+            {anomalies.status === 'error' && <ErrorState title="Could not load the anomalies" message={anomalies.message} onRetry={onRetry} />}
+            {anomalies.status === 'ready' && anomalies.data.length === 0 && (
+              <p className="rounded-card border border-border bg-surface px-5 py-4 text-sm text-muted shadow-card">No anomalies in the latest analysis for this meter.</p>
+            )}
+            {anomalies.status === 'ready' && anomalies.data.length > 0 && <AnomaliesTable anomalies={anomalies.data} showMeter={false} />}
+          </section>
+
           <section aria-labelledby="charts-heading" className="flex flex-col gap-3">
             <h2 id="charts-heading" className="text-base font-semibold text-text">
               Readings against the baseline
             </h2>
             {readings.status === 'loading' && <Loading label="Loading charts" className="h-72" />}
             {readings.status === 'error' && <ErrorState title="Could not load the readings" message={readings.message} onRetry={onRetry} />}
-            {readings.status === 'ready' && <ChartGrid readings={readings.data} events={events.status === 'ready' ? events.data : []} />}
+            {readings.status === 'ready' && <ChartGrid readings={readings.data} events={events.status === 'ready' ? events.data : []} windows={windows} />}
           </section>
 
           {events.status === 'loading' && <Loading label="Loading events" className="h-24" />}

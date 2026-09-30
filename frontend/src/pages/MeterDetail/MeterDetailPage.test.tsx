@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactElement } from 'react'
 import { cloneElement } from 'react'
@@ -7,6 +7,7 @@ import { setToken } from '../../api/token'
 import type { Analysis, MeterDetail, MeterEvent, ReadingPoint } from '../../api/types'
 import { AppProviders } from '../../app/providers'
 import { routerFuture } from '../../app/router'
+import { makeAnomaly } from '../../test/fixtures'
 import { createTestQueryClient, jsonResponse } from '../../test/utils'
 import { MeterDetailPage } from './MeterDetailPage'
 
@@ -70,6 +71,7 @@ const happy = () => ({
   'GET /api/meters/M-109': [jsonResponse(200, meter)],
   'GET /api/meters/M-109/readings': [jsonResponse(200, { meter_id: 'M-109', points: readings })],
   'GET /api/meters/M-109/events': [jsonResponse(200, { items: events })],
+  'GET /api/anomalies?meter_id=M-109': [jsonResponse(200, { analysis_id: 'a-1', summary_text: 'x', items: [makeAnomaly()] })],
 })
 
 const calls = (key: string) => fetchMock.mock.calls.filter(([url, init]) => `${init?.method ?? 'GET'} ${String(url)}` === key).length
@@ -106,6 +108,25 @@ describe('MeterDetailPage', () => {
     expect(screen.getByRole('img', { name: /Consumption \(kWh\).*baseline 22\.0 kWh \(\+104\.5%\)/ })).toBeInTheDocument()
   })
 
+  it('shows the meter anomalies and highlights their window on the charts', async () => {
+    mockApi(happy())
+    renderAt('/meters/M-109')
+
+    const section = await screen.findByRole('region', { name: 'Anomalies for this meter' })
+    expect(await within(section).findByRole('link', { name: 'Investigate M-109' })).toHaveAttribute('href', '/anomalies/an-1')
+    expect(screen.getByRole('link', { name: 'View findings' })).toHaveAttribute('href', '/anomalies?meter_id=M-109')
+    for (const chart of await screen.findAllByRole('img')) expect(chart).toHaveAccessibleName(/anomaly window highlighted: Level shift up, High severity/)
+  })
+
+  it('keeps the rest of the page when only the anomalies fail', async () => {
+    mockApi({ ...happy(), 'GET /api/anomalies?meter_id=M-109': [jsonResponse(500, { error: { code: 'internal', message: 'anomalies down' } })] })
+    renderAt('/meters/M-109')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('anomalies down')
+    expect(screen.getByRole('group', { name: 'Total consumption' })).toBeInTheDocument()
+    expect(await screen.findAllByRole('img')).toHaveLength(4)
+  })
+
   it('fetches the meter, readings and events in parallel', async () => {
     mockApi({
       'GET /api/meters/M-109': [jsonResponse(200, meter)],
@@ -114,7 +135,7 @@ describe('MeterDetailPage', () => {
     })
     renderAt('/meters/M-109')
     // All three requests go out before any answer is awaited by the UI.
-    await waitFor(() => expect(fetchMock.mock.calls.filter(([url]) => String(url).startsWith('/api/meters'))).toHaveLength(3))
+    await waitFor(() => expect(fetchMock.mock.calls.filter(([url]) => String(url).startsWith('/api/meters') || String(url).startsWith('/api/anomalies'))).toHaveLength(4))
   })
 
   it('shows not-found for an unknown meter', async () => {
