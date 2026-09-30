@@ -115,3 +115,18 @@ export function summarizeSeries(series: ChartPoint[]): SeriesSummary | null {
     latestDeltaPct: deltaPct(last.observed, last.baseline),
   }
 }
+
+export interface DayTotals {
+  observedKwh: number
+  /** Null when any of the readings has no baseline. */
+  baselineKwh: number | null
+}
+
+/** Totals over the latest 24 readings, or null when the series is shorter than a day. */
+export function latestDayTotals(points: ReadingPoint[]): DayTotals | null {
+  if (points.length < 24) return null
+  const day = points.slice(-24)
+  const observedKwh = day.reduce((sum, p) => sum + p.consumption_kwh, 0)
+  const complete = day.every((p) => p.baseline_kwh > 0)
+  return { observedKwh, baselineKwh: complete ? day.reduce((sum, p) => sum + p.baseline_kwh, 0) : null }
+}

@@ -4,6 +4,7 @@ import {
   clipSeries,
   deltaPct,
   eventLabel,
+  latestDayTotals,
   summarizeSeries,
   toChartSeries,
   toReferenceAreas,
@@ -140,5 +141,27 @@ describe('summarizeSeries', () => {
   })
   it('handles an empty series', () => {
     expect(summarizeSeries([])).toBeNull()
+  })
+})
+
+describe('latestDayTotals', () => {
+  const day = (baseline: number) =>
+    Array.from({ length: 30 }, (_, i) => ({
+      ...point(0),
+      timestamp: new Date(Date.UTC(2026, 8, 12, i)).toISOString(),
+      consumption_kwh: i < 6 ? 1000 : 2,
+      baseline_kwh: i < 6 ? 1000 : baseline,
+    }))
+
+  it('sums the last 24 readings and their baseline', () => {
+    expect(latestDayTotals(day(1))).toEqual({ observedKwh: 48, baselineKwh: 24 })
+  })
+
+  it('has no baseline total when any reading lacks one', () => {
+    expect(latestDayTotals(day(0))).toEqual({ observedKwh: 48, baselineKwh: null })
+  })
+
+  it('is null for fewer than 24 readings', () => {
+    expect(latestDayTotals(day(1).slice(0, 23))).toBeNull()
   })
 })
