@@ -122,8 +122,8 @@ export function MetricChart({ metric, series, areas = [], lines = [], domain }: 
                 tick={{ fontSize: 11, fill: chartTheme.axis }}
                 tickLine={false}
                 axisLine={false}
-                width={52}
-                label={{ value: metric.unit, angle: -90, position: 'insideLeft', fontSize: 11, fill: chartTheme.axis, offset: 8 }}
+                width={64}
+                label={{ value: metric.unit, angle: -90, position: 'insideLeft', fontSize: 11, fill: chartTheme.axis, offset: 14 }}
               />
               <Tooltip
                 isAnimationActive={false}
