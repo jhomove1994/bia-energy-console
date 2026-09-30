@@ -12,12 +12,13 @@ export interface DashboardWatch {
   until: number
 }
 
-/** Dashboard KPIs. While `watch` is set, refetches every second until a newer analysis shows up. */
-export function useDashboard(watch: DashboardWatch | null = null) {
+/** Dashboard KPIs (`enabled: false` for pages that only need the query while a run is watched). While `watch` is set, refetches every second until a newer analysis shows up. */
+export function useDashboard(watch: DashboardWatch | null = null, enabled = true) {
   return useQuery({
     queryKey: DASHBOARD_KEY,
     queryFn: getDashboardSummary,
     staleTime: 10_000,
+    enabled,
     refetchInterval: (query) => {
       if (!watch || Date.now() > watch.until) return false
       const current = query.state.data?.last_analysis?.id ?? null
