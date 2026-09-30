@@ -1,0 +1,14 @@
+# Local Pi runtime state
+.atl/
+
+# Third-party agent skills (local tooling, not part of the deliverable)
+.claude/skills/ui-ux-pro-max/
+
+# Build and runtime artifacts
+backend/*.db
+backend/*.db-shm
+backend/*.db-wal
+backend/energy.db
+node_modules/
+frontend/dist/
+*.log

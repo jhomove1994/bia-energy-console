@@ -1,0 +1,27 @@
+schema: spec-driven
+context: |
+  Project: prueba-tecnica (technical test: AI Energy Management).
+  Greenfield repo. Inputs in docs/: brief PDF, events.csv, readings.csv.
+  Stack: undetermined - to be decided in proposal/design.
+  Artifact language: English.
+strict_tdd: false
+strict_tdd_note: >
+  Desired once a stack and test runner exist (global config enables Strict TDD).
+  Currently false because zero projects were discovered and no workspace-level
+  test command exists. Re-run sdd-init after the stack is chosen.
+projects: []
+testing:
+  runner: none
+  layers: {unit: false, integration: false, e2e: false}
+  coverage: false
+  linter: none
+  type_checker: none
+  formatter: none
+rules:
+  proposal: {}
+  spec: {}
+  design: {}
+  tasks: {}
+  apply: {}
+  verify: {}
+  archive: {}
