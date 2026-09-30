@@ -1,4 +1,4 @@
-import { severityLabel, severityToken, statusLabel, statusToken, typeLabel, typeToken } from './status'
+import { variationTone, severityLabel, severityToken, statusLabel, statusToken, typeLabel, typeToken } from './status'
 
 describe('severityToken', () => {
   it('maps each severity to its design token', () => {
@@ -33,5 +33,17 @@ describe('labels', () => {
     expect(typeLabel('FALSE_POSITIVE')).toBe('False positive')
     expect(severityLabel('HIGH')).toBe('High')
     expect(statusLabel('Critical')).toBe('Critical')
+  })
+})
+
+describe('variationTone', () => {
+  it('flags large moves in either direction and keeps small ones quiet', () => {
+    expect(variationTone(103.7)).toBe('high')
+    expect(variationTone(-40)).toBe('high')
+    expect(variationTone(12)).toBe('medium')
+    expect(variationTone(-10)).toBe('medium')
+    expect(variationTone(1.1)).toBe('none')
+    expect(variationTone(-0.3)).toBe('none')
+    expect(variationTone(null)).toBe('none')
   })
 })

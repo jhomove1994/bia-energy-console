@@ -41,3 +41,14 @@ export const statusToken = (s: MeterStatus): StatusToken => statusTokens[s]
 export const typeLabel = (t: AnomalyType): string => typeLabels[t]
 export const severityLabel = (s: Severity): string => severityLabels[s]
 export const statusLabel = (s: MeterStatus): string => s
+
+export type VariationTone = 'high' | 'medium' | 'none'
+
+/** How loudly to show a daily variation (percent points): big moves in either direction stand out. */
+export function variationTone(pct: number | null): VariationTone {
+  if (pct === null) return 'none'
+  const magnitude = Math.abs(pct)
+  if (magnitude >= 25) return 'high'
+  if (magnitude >= 10) return 'medium'
+  return 'none'
+}
