@@ -1,4 +1,4 @@
-import { formatConfidence, formatDate, formatDateTime, formatKwh, formatSignedPercent } from './format'
+import { formatAxisTick, formatNumber, formatConfidence, formatDate, formatDateTime, formatKwh, formatSignedPercent } from './format'
 
 describe('formatKwh', () => {
   it('groups thousands and keeps one decimal', () => {
@@ -43,5 +43,20 @@ describe('date formats', () => {
   it('renders a placeholder for a missing value', () => {
     expect(formatDate(null)).toBe('—')
     expect(formatDateTime(undefined)).toBe('—')
+  })
+})
+
+describe('formatAxisTick', () => {
+  it('shows the UTC day and month for a timestamp in epoch milliseconds', () => {
+    expect(formatAxisTick(Date.parse('2026-09-12T14:00:00Z'))).toBe('12 Sep')
+    expect(formatAxisTick(Date.parse('2026-09-30T23:30:00Z'))).toBe('30 Sep')
+  })
+})
+
+describe('formatNumber', () => {
+  it('keeps the requested decimals with thousands separators', () => {
+    expect(formatNumber(2180.456, 1)).toBe('2,180.5')
+    expect(formatNumber(0.951, 2)).toBe('0.95')
+    expect(formatNumber(230, 0)).toBe('230')
   })
 })

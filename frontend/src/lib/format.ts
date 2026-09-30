@@ -33,3 +33,13 @@ export function formatDateTime(iso: string | null | undefined): string {
   const date = new Date(iso)
   return `${dateOf(date)}, ${timeFormat.format(date)} UTC`
 }
+
+/** Day and month (UTC) of an epoch-millisecond timestamp, for chart axis ticks. */
+export function formatAxisTick(ms: number): string {
+  const date = new Date(ms)
+  return `${date.getUTCDate()} ${monthFormat.format(date)}`
+}
+
+export function formatNumber(value: number, decimals: number): string {
+  return new Intl.NumberFormat('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value)
+}
