@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"energy/internal/adapters/csvload"
+	"energy/internal/adapters/explain"
 	httpapi "energy/internal/adapters/http"
 	"energy/internal/adapters/sqlite"
 	"energy/internal/app"
@@ -54,13 +55,19 @@ func run(ctx context.Context, getenv func(string) string, log *slog.Logger) erro
 // newHandler wires the repositories, services and HTTP adapter.
 func newHandler(db *sqlite.DB, cfg platform.Config, log *slog.Logger) http.Handler {
 	meters, readings, events := sqlite.NewMeterStore(db), sqlite.NewReadingStore(db), sqlite.NewEventStore(db)
+	analyses, anomalies := sqlite.NewAnalysisStore(db), sqlite.NewAnomalyStore(db)
+	ecfg := engine.DefaultConfig()
 	return httpapi.NewRouter(httpapi.Deps{
 		DemoUser:     cfg.DemoUser,
 		DemoPassword: cfg.DemoPassword,
 		Tokens:       httpapi.NewTokens(cfg.AuthSecret, cfg.TokenTTL, time.Now),
 		Log:          log,
-		Meters:       app.NewMeterService(meters, readings, events, app.NoAnalysis{}, engine.DefaultConfig()),
-		Dashboard:    app.NewDashboardService(meters, readings, app.NoLatestDone{}),
+		Meters:       app.NewMeterService(meters, readings, events, app.NewAnalysisStatuses(analyses, anomalies), ecfg),
+		Dashboard:    app.NewDashboardService(meters, readings, analyses),
+		Analysis: app.NewAnalysisService(analyses, readings, events, explain.New(), platform.UUIDGenerator{}, ecfg,
+			app.WithStageDelay(cfg.StageDelay), app.WithLogger(log)),
+		Anomalies: app.NewAnomalyService(analyses, anomalies),
+		Engine:    &ecfg,
 	})
 }
 
@@ -125,6 +132,13 @@ func bootstrap(ctx context.Context, getenv func(string) string, log *slog.Logger
 			}
 			log.Warn("seed data unavailable; continuing with existing database", "error", err.Error(), "meters", meters)
 		}
+	}
+	n, err := sqlite.NewAnalysisStore(db).FailInterrupted(ctx, time.Now())
+	if err != nil {
+		return fail(fmt.Errorf("recover interrupted analyses: %w", err))
+	}
+	if n > 0 {
+		log.Warn("marked interrupted analyses as failed", "count", n)
 	}
 	return db, cfg, nil
 }

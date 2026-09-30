@@ -13,6 +13,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"energy/internal/adapters/sqlite"
+	"energy/internal/domain"
 )
 
 func envOf(m map[string]string) func(string) string { return func(k string) string { return m[k] } }
@@ -150,4 +153,91 @@ func TestServeStopsGracefullyOnContextCancel(t *testing.T) {
 	if _, err := http.Get("http://" + ln.Addr().String()); err == nil {
 		t.Fatal("listener still accepting after shutdown")
 	}
+}
+
+func TestBootRecoversInterruptedAnalysisAndAllowsANewRun(t *testing.T) {
+	ctx := context.Background()
+	env := envOf(map[string]string{"DB_PATH": filepath.Join(t.TempDir(), "e.db"), "DATA_DIR": "../../../data"})
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	// First boot seeds the data; then a run is left "running" as if the process died.
+	db, _, err := bootstrap(ctx, env, quiet)
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := sqlite.NewAnalysisStore(db)
+	for id, st := range map[string]domain.AnalysisStatus{"stuck-pending": domain.AnalysisPending, "stuck-running": domain.AnalysisRunning} {
+		if err := store.Create(ctx, domain.Analysis{ID: id, Status: domain.AnalysisPending, CreatedAt: time.Now().UTC()}); err != nil {
+			t.Fatal(err)
+		}
+		if st == domain.AnalysisRunning {
+			if err := store.UpdateProgress(ctx, id, st, domain.StageDetection, 3, 28); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	db.Close()
+
+	var logs bytes.Buffer
+	db, cfg, err := bootstrap(ctx, env, slog.New(slog.NewTextHandler(&logs, nil)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	store = sqlite.NewAnalysisStore(db)
+	for _, id := range []string{"stuck-pending", "stuck-running"} {
+		a, err := store.Get(ctx, id)
+		if err != nil || a.Status != domain.AnalysisFailed || a.Error != "interrupted by restart" || a.FinishedAt == nil {
+			t.Fatalf("%s after boot = %+v, %v; want failed/interrupted", id, a, err)
+		}
+	}
+	if !strings.Contains(logs.String(), "interrupted") {
+		t.Fatalf("boot must log the recovery:\n%s", logs.String())
+	}
+
+	srv := httptest.NewServer(newHandler(db, cfg, quiet))
+	defer srv.Close()
+	token := loginToken(t, srv.URL)
+	resp := authedDo(t, "POST", srv.URL+"/api/ai/analyze", token)
+	var started struct{ ID string }
+	if resp.StatusCode != http.StatusAccepted || json.NewDecoder(resp.Body).Decode(&started) != nil || started.ID == "" {
+		t.Fatalf("analyze after recovery = %d", resp.StatusCode)
+	}
+	deadline := time.Now().Add(10 * time.Second)
+	for {
+		var a struct{ Status string }
+		r := authedDo(t, "GET", srv.URL+"/api/ai/analysis/"+started.ID, token)
+		_ = json.NewDecoder(r.Body).Decode(&a)
+		if a.Status == "done" {
+			break
+		}
+		if a.Status == "failed" || time.Now().After(deadline) {
+			t.Fatalf("new analysis ended %q, want done", a.Status)
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+}
+
+func loginToken(t *testing.T, base string) string {
+	t.Helper()
+	resp, err := http.Post(base+"/api/auth/login", "application/json", strings.NewReader(`{"username":"admin","password":"admin123"}`))
+	if err != nil || resp.StatusCode != http.StatusOK {
+		t.Fatalf("login = %v, %v", resp, err)
+	}
+	var out struct{ Token string }
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil || out.Token == "" {
+		t.Fatalf("login body: %v", err)
+	}
+	return out.Token
+}
+
+func authedDo(t *testing.T, method, url, token string) *http.Response {
+	t.Helper()
+	req, _ := http.NewRequest(method, url, nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return resp
 }
