@@ -70,3 +70,12 @@ type NoAnalysis struct{}
 func (NoAnalysis) Statuses(context.Context) (map[string]MeterFinding, error) {
 	return map[string]MeterFinding{}, nil
 }
+
+// Explainer renders the human-readable text of an anomaly from its evidence.
+// Implementations must be deterministic and must not need the network.
+type Explainer interface {
+	// Reason explains why the anomaly was reported.
+	Reason(a domain.Anomaly) string
+	// Action says what to do about it.
+	Action(a domain.Anomaly) string
+}
