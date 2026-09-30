@@ -1,0 +1,41 @@
+# Zero-config demo: `docker compose up --build`, then open http://localhost:8080.
+# Every variable has a default, so no .env file or API key is needed.
+# Copy .env.example to .env only to override values.
+services:
+  api:
+    build: ./backend
+    environment:
+      PORT: "8080"
+      DB_PATH: /var/lib/energy/energy.db
+      DATA_DIR: /data
+      SEED_ON_START: "true"
+      DEMO_USER: ${DEMO_USER:-admin}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-admin123}
+      AUTH_SECRET: ${AUTH_SECRET:-change-me-demo}
+      TOKEN_TTL: ${TOKEN_TTL:-12h}
+      # Keeps the seven analysis stages visible in the demo (Go default is 0).
+      ANALYSIS_STAGE_DELAY_MS: ${ANALYSIS_STAGE_DELAY_MS:-300}
+    volumes:
+      - ./data:/data:ro
+      - energy-db:/var/lib/energy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    restart: unless-stopped
+
+volumes:
+  energy-db:
