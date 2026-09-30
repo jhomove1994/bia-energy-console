@@ -3,10 +3,12 @@ import { formatConfidence } from '../../lib/format'
 export interface ConfidenceMeterProps {
   /** 0..1, or null when no analysis has produced one yet. */
   value: number | null
+  /** `lg` sizes the percent like a KPI figure. */
+  size?: 'md' | 'lg'
 }
 
-export function ConfidenceMeter({ value }: ConfidenceMeterProps) {
-  if (value === null) return <span className="tabular text-muted">—</span>
+export function ConfidenceMeter({ value, size = 'md' }: ConfidenceMeterProps) {
+  if (value === null) return <span className="text-muted">—</span>
   const percent = Math.round(value * 100)
   return (
     <div className="flex items-center gap-2.5">
@@ -20,7 +22,7 @@ export function ConfidenceMeter({ value }: ConfidenceMeterProps) {
       >
         <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
       </div>
-      <span className="tabular text-sm font-semibold text-text">{formatConfidence(value)}</span>
+      <span className={`tabular font-semibold text-text ${size === 'lg' ? 'text-3xl leading-none' : 'text-sm'}`}>{formatConfidence(value)}</span>
     </div>
   )
 }

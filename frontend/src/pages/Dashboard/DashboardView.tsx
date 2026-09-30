@@ -23,7 +23,7 @@ export interface DashboardViewProps {
   runError: string | null
 }
 
-const NOT_ANALYZED = '—'
+const NOT_ANALYZED = <span className="text-muted">—</span>
 
 function LoadingSkeleton() {
   return (
@@ -66,7 +66,7 @@ function Kpis({ summary }: { summary: DashboardSummary }) {
         caption={analyzed ? 'Require priority attention' : 'Not analyzed yet'}
         icon={<TargetIcon />}
       />
-      <KpiCard label="Aggregate confidence" value={<ConfidenceMeter value={summary.aggregate_confidence} />} caption="Mean over detected anomalies" />
+      <KpiCard label="Aggregate confidence" value={<ConfidenceMeter value={summary.aggregate_confidence} size="lg" />} caption="Mean over detected anomalies" />
       <KpiCard
         label="Last analysis"
         size="md"
