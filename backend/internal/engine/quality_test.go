@@ -235,3 +235,102 @@ func TestJumpsAcrossAGapAreIgnored(t *testing.T) {
 		t.Fatalf("jump measured across a gap: %+v", got)
 	}
 }
+
+func ratioSignals(series []domain.Reading, cfg Config) []Signal {
+	return DetectRatio(series, BuildBaseline(series, cfg), cfg)
+}
+
+func TestStableRatioShiftIsCorroborationNotDataQuality(t *testing.T) {
+	cfg := DefaultConfig()
+	// kWh +25% with V, A and PF unchanged: the ratio shifts +25% for 12 hours.
+	series := synth(10, flat20(), hoursAt(8, span(2, 13), scaleKWh(1.25)))
+	got := ratioSignals(series, cfg)
+	if len(got) != 1 {
+		t.Fatalf("signals = %+v", got)
+	}
+	s := got[0]
+	if s.Kind != KindRatioStable || s.Role != RoleSecondary || s.Sign != 1 {
+		t.Fatalf("signal = %+v", s)
+	}
+	if s.Hours != 12 || !s.Standalone {
+		t.Fatalf("hours/standalone = %d/%v", s.Hours, s.Standalone)
+	}
+	near(t, "baseline ratio", s.Baseline, synthRatio)
+	near(t, "delta pct", s.DeltaPct, 25)
+}
+
+func TestShortStableRatioRunIsNotStandalone(t *testing.T) {
+	cfg := DefaultConfig()
+	series := synth(10, flat20(), hoursAt(8, span(2, 5), scaleKWh(1.25)))
+	got := ratioSignals(series, cfg)
+	if len(got) != 1 || got[0].Kind != KindRatioStable {
+		t.Fatalf("signals = %+v", got)
+	}
+	if got[0].Hours != 4 || got[0].Standalone {
+		t.Fatalf("hours/standalone = %d/%v, want 4/false (below RatioStandaloneMinHours)", got[0].Hours, got[0].Standalone)
+	}
+	// Lowering the standalone threshold flips the flag: it reads from Config.
+	cfg.RatioStandaloneMinHours = 4
+	if got := ratioSignals(series, cfg); !got[0].Standalone {
+		t.Fatalf("standalone ignored the configured threshold")
+	}
+}
+
+func TestDeviantRatioOfBothSignsWithin24HoursIsUnstable(t *testing.T) {
+	cfg := DefaultConfig()
+	// Ratio x4.22 for three hours and x0.58 for three hours, same day.
+	series := synth(10, flat20(), func(d, h int, r *domain.Reading) {
+		hoursAt(8, span(2, 4), scaleKWh(4.22))(d, h, r)
+		hoursAt(8, span(8, 10), scaleKWh(0.58))(d, h, r)
+	})
+	got := ratioSignals(series, cfg)
+	if len(got) != 1 {
+		t.Fatalf("signals = %+v", got)
+	}
+	s := got[0]
+	if s.Kind != KindRatioUnstable || s.Role != RoleSeed || s.Sign != 0 {
+		t.Fatalf("signal = %+v", s)
+	}
+	if s.Flagged != 6 {
+		t.Fatalf("flagged = %d, want 6", s.Flagged)
+	}
+	if !s.Start.Equal(testStart.AddDate(0, 0, 8).Add(2*hour)) || !s.End.Equal(testStart.AddDate(0, 0, 8).Add(10*hour)) {
+		t.Fatalf("window = %v..%v", s.Start, s.End)
+	}
+}
+
+func TestSameSignDeviationsAreNeverUnstable(t *testing.T) {
+	cfg := DefaultConfig()
+	series := synth(10, flat20(), hoursAt(8, []int{2, 5, 9, 14}, scaleKWh(3)))
+	for _, s := range ratioSignals(series, cfg) {
+		if s.Kind == KindRatioUnstable {
+			t.Fatalf("same-sign deviations are unstable: %+v", s)
+		}
+	}
+}
+
+func TestRatioSkipsRowsWithNonPositiveDenominator(t *testing.T) {
+	cfg := DefaultConfig()
+	series := synth(10, flat20(), hoursAt(8, span(2, 8), func(r *domain.Reading) {
+		r.PF = 0
+		r.KWh = 80
+	}))
+	if got := ratioSignals(series, cfg); len(got) != 0 {
+		t.Fatalf("signals = %+v", got)
+	}
+}
+
+func TestRatioSkippedWithoutBaselineRatio(t *testing.T) {
+	cfg := DefaultConfig()
+	series := synth(10, flat20(), func(d, h int, r *domain.Reading) {
+		if d < 7 {
+			r.PF = 0 // no ratio can be computed in the baseline window
+		}
+		if d == 8 {
+			r.KWh *= 3
+		}
+	})
+	if got := ratioSignals(series, cfg); len(got) != 0 {
+		t.Fatalf("signals = %+v", got)
+	}
+}

@@ -183,3 +183,124 @@ func metricUnit(metric string) string {
 	}
 	return ""
 }
+
+// ratioHour is one hour whose electrical ratio departs from the baseline.
+type ratioHour struct {
+	idx   int
+	ts    time.Time
+	ratio float64
+	sign  int
+}
+
+// DetectRatio compares the hourly electrical ratio kWh / (V*A*PF/1000) with
+// the baseline median. Hours deviating by at least RatioDevPct are deviant.
+// Deviant hours of both signs (at least RatioUnstableMinHours of them inside
+// DQWindowHours) mean the measurement itself is unreliable: they form
+// unstable runs that seed a data-quality incident. The remaining deviant hours
+// form same-sign stable runs, which only corroborate a consumption change
+// unless they last RatioStandaloneMinHours (Standalone). Rows whose
+// denominator is not positive are skipped.
+func DetectRatio(series []domain.Reading, b Baseline, cfg Config) []Signal {
+	if b.InsufficientHistory || b.RatioMedian <= 0 {
+		return nil
+	}
+	var dev []ratioHour
+	for i, r := range series {
+		q, ok := ElectricalRatio(r)
+		if !ok {
+			continue
+		}
+		d := (q - b.RatioMedian) / b.RatioMedian
+		if math.Abs(d) >= cfg.RatioDevPct {
+			dev = append(dev, ratioHour{idx: i, ts: r.TS, ratio: q, sign: sign(d)})
+		}
+	}
+	if len(dev) == 0 {
+		return nil
+	}
+	window := time.Duration(cfg.DQWindowHours) * hour
+
+	unstable := make([]bool, len(dev))
+	for a := range dev {
+		end, pos, neg := a, 0, 0
+		for end < len(dev) && dev[end].ts.Sub(dev[a].ts) <= window {
+			if dev[end].sign > 0 {
+				pos++
+			} else {
+				neg++
+			}
+			end++
+		}
+		if end-a >= cfg.RatioUnstableMinHours && pos > 0 && neg > 0 {
+			for k := a; k < end; k++ {
+				unstable[k] = true
+			}
+		}
+	}
+
+	var out []Signal
+	var group []ratioHour
+	flushUnstable := func() {
+		if len(group) > 0 {
+			out = append(out, ratioSignal(series, b, group, KindRatioUnstable, RoleSeed, 0, cfg))
+			group = nil
+		}
+	}
+	for k, h := range dev {
+		if !unstable[k] {
+			continue
+		}
+		if n := len(group); n > 0 && h.ts.Sub(group[n-1].ts) > window {
+			flushUnstable()
+		}
+		group = append(group, h)
+	}
+	flushUnstable()
+
+	flushStable := func() {
+		if len(group) > 0 {
+			out = append(out, ratioSignal(series, b, group, KindRatioStable, RoleSecondary, group[0].sign, cfg))
+			group = nil
+		}
+	}
+	for k, h := range dev {
+		if unstable[k] {
+			continue
+		}
+		if n := len(group); n > 0 && (group[n-1].sign != h.sign || gapHours(group[n-1].ts, h.ts) > cfg.MergeGapHours) {
+			flushStable()
+		}
+		group = append(group, h)
+	}
+	flushStable()
+
+	sort.SliceStable(out, func(a, c int) bool { return out[a].Start.Before(out[c].Start) })
+	return out
+}
+
+func ratioSignal(series []domain.Reading, b Baseline, group []ratioHour, kind SignalKind, role Role, sgn int, cfg Config) Signal {
+	first, last := group[0], group[len(group)-1]
+	var sum float64
+	for _, h := range group {
+		sum += h.ratio
+	}
+	mean := sum / float64(len(group))
+	hours := int(last.ts.Sub(first.ts)/hour) + 1
+	return Signal{
+		MeterID:    series[first.idx].MeterID,
+		Kind:       kind,
+		Metric:     "electrical_ratio",
+		Start:      first.ts,
+		End:        last.ts,
+		Sign:       sgn,
+		Role:       role,
+		Hours:      hours,
+		Flagged:    len(group),
+		Count:      len(group),
+		Baseline:   b.RatioMedian,
+		Observed:   mean,
+		DeltaPct:   pct(mean, b.RatioMedian),
+		Unit:       "ratio",
+		Standalone: kind == KindRatioStable && hours >= cfg.RatioStandaloneMinHours,
+	}
+}
