@@ -1,6 +1,6 @@
 // DTOs mirror the public API field names from the specs.
 
-import type { MeterStatus } from '../lib/status'
+import type { AnomalyType, MeterStatus, Severity } from '../lib/status'
 
 export interface LoginRequest {
   username: string
@@ -77,4 +77,84 @@ export interface MeterListParams {
   status?: string
   sort?: string
   order?: string
+}
+
+export type AnalysisStage = 'readings' | 'baseline' | 'detection' | 'correlation' | 'events' | 'explanation' | 'recommendation'
+
+export interface AnalysisSummary {
+  total: number
+  priority_attention: number
+  meters_analyzed: number
+  by_type: Record<string, number>
+  by_severity: Record<string, number>
+  avg_confidence: number
+  /** Ready-made headline, e.g. "4 anomalies detected · 2 require priority attention". */
+  text: string
+}
+
+export interface Analysis {
+  id: string
+  status: AnalysisStatus
+  /** Name of the stage in progress; empty while pending. */
+  stage: AnalysisStage | ''
+  /** 1-based position of the current stage; 0 while pending. */
+  stage_index: number
+  stage_total: number
+  /** 0..100 */
+  progress: number
+  created_at: string
+  started_at: string | null
+  finished_at: string | null
+  /** Empty unless the run failed. */
+  error: string
+  /** Present only when the run is done. */
+  summary: AnalysisSummary | null
+}
+
+export interface EvidenceItem {
+  metric: string
+  label: string
+  baseline: number | null
+  observed: number
+  delta_pct: number | null
+  unit: string
+  detail: string
+}
+
+export interface Anomaly {
+  id: string
+  analysis_id: string
+  meter_id: string
+  /** Short human title of the kind, e.g. "Level shift up". */
+  anomaly: string
+  kind: string
+  type: AnomalyType
+  severity: Severity
+  severity_score: number
+  confidence: number
+  confidence_label: string
+  priority_score: number
+  priority_rank: number
+  detected_at: string
+  window_start: string
+  window_end: string
+  reason: string
+  recommended_action: string
+  action_code: string
+  status: string
+  related_event: MeterEvent | null
+  evidence: EvidenceItem[]
+}
+
+export interface AnomalyList {
+  /** Null until an analysis has completed. */
+  analysis_id: string | null
+  summary_text: string | null
+  items: Anomaly[]
+}
+
+export interface AnomalyFilters {
+  type?: string
+  severity?: string
+  meter_id?: string
 }
