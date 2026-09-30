@@ -209,7 +209,7 @@ func (s *MeterService) requireMeter(ctx context.Context, id string) error {
 		return err
 	}
 	if !ok {
-		return fmt.Errorf("meter %s: %w", id, ErrNotFound)
+		return fmt.Errorf("meter %s %w", id, ErrNotFound)
 	}
 	return nil
 }

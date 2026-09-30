@@ -6,22 +6,84 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"energy/internal/adapters/csvload"
+	httpapi "energy/internal/adapters/http"
 	"energy/internal/adapters/sqlite"
+	"energy/internal/app"
+	"energy/internal/engine"
 	"energy/internal/platform"
 )
 
+const shutdownTimeout = 10 * time.Second
+
 func main() {
 	log := slog.New(slog.NewTextHandler(os.Stderr, nil))
-	db, _, err := bootstrap(context.Background(), os.Getenv, log)
-	if err != nil {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	if err := run(ctx, os.Getenv, log); err != nil {
 		log.Error("startup failed", "error", err)
 		os.Exit(1)
 	}
+}
+
+// run bootstraps the platform and serves HTTP until ctx is cancelled. The
+// listener only opens after the seed has completed.
+func run(ctx context.Context, getenv func(string) string, log *slog.Logger) error {
+	db, cfg, err := bootstrap(ctx, getenv, log)
+	if err != nil {
+		return err
+	}
 	defer db.Close()
-	log.Info("bootstrap complete; HTTP server is not wired yet")
+
+	ln, err := net.Listen("tcp", ":"+cfg.Port)
+	if err != nil {
+		return fmt.Errorf("listen on port %s: %w", cfg.Port, err)
+	}
+	srv := &http.Server{Handler: newHandler(db, cfg, log), ReadHeaderTimeout: 10 * time.Second}
+	log.Info("http server listening", "addr", ln.Addr().String())
+	return serve(ctx, srv, ln, log)
+}
+
+// newHandler wires the repositories, services and HTTP adapter.
+func newHandler(db *sqlite.DB, cfg platform.Config, log *slog.Logger) http.Handler {
+	meters, readings, events := sqlite.NewMeterStore(db), sqlite.NewReadingStore(db), sqlite.NewEventStore(db)
+	return httpapi.NewRouter(httpapi.Deps{
+		DemoUser:     cfg.DemoUser,
+		DemoPassword: cfg.DemoPassword,
+		Tokens:       httpapi.NewTokens(cfg.AuthSecret, cfg.TokenTTL, time.Now),
+		Log:          log,
+		Meters:       app.NewMeterService(meters, readings, events, app.NoAnalysis{}, engine.DefaultConfig()),
+		Dashboard:    app.NewDashboardService(meters, readings, app.NoLatestDone{}),
+	})
+}
+
+// serve runs srv on ln until it fails or ctx is cancelled, then shuts down
+// gracefully, letting in-flight requests finish.
+func serve(ctx context.Context, srv *http.Server, ln net.Listener, log *slog.Logger) error {
+	errCh := make(chan error, 1)
+	go func() { errCh <- srv.Serve(ln) }()
+	select {
+	case err := <-errCh:
+		return err
+	case <-ctx.Done():
+	}
+	log.Info("shutting down")
+	shutCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+	if err := srv.Shutdown(shutCtx); err != nil {
+		return fmt.Errorf("graceful shutdown: %w", err)
+	}
+	if err := <-errCh; err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	return nil
 }
 
 // bootstrap loads config, opens and migrates the database and seeds it from
