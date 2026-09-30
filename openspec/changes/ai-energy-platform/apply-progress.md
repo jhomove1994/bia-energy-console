@@ -422,5 +422,58 @@ Commits (work units):
 - Tests mock only `ResponsiveContainer` (fixed size) so the real chart renders in jsdom; assertions use accessible names and text, not SVG geometry.
 - Size: see return summary; `size:exception` accepted for all PRs.
 
+## Batch 9: Slice 8 (complete)
+
+Completed tasks: 8.1 - 8.10 (114/125 overall), plus the approved y-axis polish.
+
+### Slice 8 (branch `feat/08-analysis-anomalies-investigation`, base `feat/07-meters-detail`)
+
+Commits (work units):
+| Hash | Message |
+|------|---------|
+| 290cfc4 | chore(frontend): remove stray sed backup file |
+| 4bf9c09 | feat(frontend): add analysis API types and useAnalysisJob with 500 ms polling (8.1, 8.2) |
+| 656a92c | feat(frontend): add StageStepper and AnalysisProgressPanel with live announcements (8.3) |
+| 7ce9777 | feat(frontend): wire live analysis progress into dashboard and meter detail (8.4) |
+| fd1d68f | feat(frontend): add anomalies API client, hooks and window and action formatters (8.5) |
+| 37dca8f | feat(frontend): add ranked AI Anomalies page with URL filters, empty states and route (8.6) |
+| 8d8d319 | feat(frontend): let charts zoom to a range and describe highlighted anomaly windows in text (8.8) |
+| 6ae8441 | feat(frontend): add investigation page with evidence table, related event and recommended action card (8.7, 8.8) |
+| 1e7a5e3 | feat(frontend): show meter anomalies, highlight their windows and link open findings (8.9) |
+| a07afb6 | fix(frontend): use per-metric y-axis precision with whole-number amps |
+
+### TDD Cycle Evidence (slice 8)
+| Task | Test file | RED (observed) | GREEN | TRIANGULATE | REFACTOR |
+|------|-----------|----------------|-------|-------------|----------|
+| 8.1/8.2 | `hooks/useAnalysisJob.test.tsx` (fake timers) | `Failed to resolve import "./useAnalysisJob"` | 9 passed on the first run | refetch predicate (5 statuses), pending to running to done with 500 ms ticks and no polling after done, invalidation of 5 query keys, no second POST while active, resume from `/latest` when running, finished latest ignored, failed then restart, start error | none |
+| 8.3 | `AnalysisProgressPanel.test.tsx` | `Failed to resolve import "../molecules/StageStepper"` | 12 passed | stepper states done/current/pending/failed, pending run, stage 3 vs 6 announcement, headline never hardcoded, failed with and without reason | none |
+| 8.4 | `DashboardPage.test.tsx`, `MeterDetailPage.test.tsx`, `MeterDetailView.test.tsx` | 8 failures (no panel, no "Analyzing" label, `busy` prop) | 168 passed | progress through stages to headline and link, disabled trigger with progress, in-flight request, start error, failed then Retry, resume on mount (both pages), meter refresh after done | `useRunAnalysis` and the dashboard watch logic deleted; `RunAnalysisButton`/`RunAnalysisFeedback` shared; `act` warnings fixed by using RTL `waitFor` |
+| 8.5/8.6 | `api/anomalies.test.ts`, `AnomaliesTable.test.tsx`, `AnomaliesView.test.tsx`, `AnomaliesPage.test.tsx`, `format`/`status` (window, action label), `router.test.tsx` | unresolved imports, 5 failing helper tests, route test could not find the nav link | 199 passed | four ranked rows, URL filters incl. `meter_id`, filter then clear, no-analysis empty state then run then table, no-match vs nothing-detected, loading, error plus Retry | none. Note: `AnomaliesPage.test` passed on its first run because the page was written with the view; RED evidence for that unit is the route test |
+| 8.7/8.8 | `EvidenceTable`, `ActionCard`, `InvestigationView`, `InvestigationPage` tests, `MetricChart`/`ChartGrid`/`chartData` tests | unresolved imports, window label and range tests failing | 235 passed | M-109 (no explaining event), M-106 (scheduled outage card), null event, 106-reading zoom, loading/not-found/error, readings-only failure, readings not requested before the meter is known | `SectionState`/`toSection` moved to `lib/section.ts`; `variationClass` moved to `lib/tone.ts` |
+| 8.9 | `MeterDetailView.test.tsx`, `MeterDetailPage.test.tsx` | 9 failures | 244 passed | findings link present/absent, section rows, empty, windows in chart text, section error, loading, anomalies fetched in parallel | none |
+| polish | `format.test.ts`, `chartData.test.ts` | `formatAxisNumber is not a function`, `axis` undefined | 250 passed | A 525/524.6, PF 0.90/1.00, V 230/229.5, kWh 90/0.5 | DOM tick tests dropped: Recharts renders no tick text in jsdom, so the pure formatter is tested instead |
+
+### Work Unit Evidence (slice 8)
+| Evidence | Value |
+|---|---|
+| Focused test command | `cd frontend && npx vitest run --reporter=dot`: 32 files, 250 tests passed (141 before the slice); `npx tsc --noEmit` clean; `npm run build` ok; `cd backend && go test ./... -count=1`: 9 packages ok (unchanged) |
+| Runtime harness | Real API (fresh temp DB, `ANALYSIS_STAGE_DELAY_MS=300`, port 18085) + Vite (`API_TARGET`), headless Chrome CDP script in the scratchpad (not committed): login to `/`, Meters (12 rows), M-109, Run AI Analysis; mid-run "Stage 3 of 7: Detection", bar 28, stepper (2 done, Detection in progress, 4 pending), button "Analyzing... 28%" disabled; done headline `4 anomalies detected · 2 require priority attention` from the API with a "View anomalies" link; M-109 detail then shows 1 open finding with a link, an "Anomalies for this meter" table and a highlighted window on all four charts; `/anomalies` 4 rows in order M-109, M-112, M-104, M-106; M-109 investigation: REAL_ANOMALY/High/98%, 8 evidence rows, "No operational event explains this change", action card `INSPECT_LOAD_INCREASE`, Priority #1, charts zoomed to 82 readings with the window highlighted; M-106 shows the Scheduled outage event; `?type=DATA_QUALITY` leaves only M-112. Servers stopped. |
+| Rollback boundary | `frontend/src/{api/{analysis,anomalies}.ts,hooks/{useAnalysisJob,useAnomalies}.ts,components/{molecules/{StageStepper,RunAnalysisButton,EvidenceRow},organisms/{AnalysisProgressPanel,RunAnalysisFeedback,AnomaliesTable,EvidenceTable,ActionCard,RelatedEventCard}},pages/{Anomalies,Investigation}/,lib/section.ts}` plus edits to Dashboard/MeterDetail pages, router, navigation, chart files |
+
+Screenshots (scratchpad, not committed): `progress.png`, `anomalies.png`, `investigation.png`, `m109-windows.png`.
+
+### Deviations / notes (slice 8)
+- Hook test file is `useAnalysisJob.test.tsx` (JSX wrapper), not `.ts`.
+- Nav label is "AI Anomalies" (matches page title and demo flow).
+- Anomaly row action column shows a short label from the action code (`actionLabel`); the full text lives on the ActionCard. Table cell uses a stretched "Investigate" link with `aria-label="Investigate <meter>"`.
+- `useAnalysisJob` resumes via `GET /api/ai/analysis/latest` (query with `gcTime: 0`, so a remount never trusts a stale "running"); the trigger guard is `active`, and the dashboard summary watch logic of slices 6 and 7 was removed (done invalidates `dashboard`, `meters`, `meter`, `anomalies`, `anomaly`).
+- The finished run's panel carries the headline, so the dashboard and anomalies banners are hidden while it is shown (no duplicate text).
+- UNKNOWN related events (M-109) are shown as "No operational event explains this change" and are not drawn as a chart marker; the `event` evidence row is left to the related-event card.
+- Charts: `ChartGrid` accepts `range` (zoom, window +-24 h) and windows with `label`; windows are also spelled out in each chart's text alternative and legend ("Anomaly window"), so severity tint is not the only signal.
+- Polish: y-axis precision per metric (kWh 0-1 dp, V 0-1 dp, A integers with `allowDecimals={false}`, PF 2 dp).
+- Removed the tracked stray file `frontend/src/app/router.test.tsx-E` (sed backup from slice 7).
+- Backend gotcha: a stale API process from an earlier session can keep port 18085, so a harness run silently hits the old DB; check `lsof -i :18085` first.
+- Size: 56 files, 2,733 additions and 311 deletions (lockfile excluded), about half tests, in 10 commits. `size:exception` accepted for all PRs.
+
 ## Remaining
-Slices 8 - 9 (21 tasks) not started. Next: 8.1 onward (analysis job hook, progress panel, anomalies, investigation).
+Slice 9 (11 tasks) not started. Next: 9.1 onward (Docker, nginx, compose, README).

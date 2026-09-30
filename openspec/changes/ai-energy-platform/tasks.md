@@ -237,16 +237,16 @@ Spec coverage: web-console (Meters list, Meter detail charts, Loading/error/empt
 Branch: `feat/08-analysis-anomalies-investigation` (base slice 7 branch). Forecast: ~480 lines (edge). Task count: 10.
 Spec coverage: web-console (Run AI Analysis with live progress, Anomalies table, Investigation and action, Loading/error/empty states, Dashboard after analysis).
 
-- [ ] 8.1 RED: `frontend/src/hooks/useAnalysisJob.test.ts`: `refetchInterval` predicate returns 500 for `pending`/`running` and `false` for `done`/`failed`/undefined; on `done` the hook invalidates `dashboard`, `meters`, `anomalies`, `meter`; trigger is disabled while active.
-- [ ] 8.2 GREEN: `frontend/src/hooks/useAnalysisJob.ts` and `getAnalysis` in `frontend/src/api/analysis.ts` (mutation stores id, polls `['analysis', id]` every 500 ms).
-- [ ] 8.3 Molecule `frontend/src/components/molecules/StageStepper.tsx` (7 named stages) and organism `frontend/src/components/organisms/AnalysisProgressPanel.tsx` (progress bar, current stage, link to Anomalies on `done`, error plus Retry on `failed`).
-- [ ] 8.4 Wire `useAnalysisJob` and the panel into `frontend/src/pages/Dashboard/DashboardPage.tsx` and `frontend/src/pages/MeterDetail/MeterDetailPage.tsx`, replacing the slice 6 placeholder handler; trigger disabled with visible progress while a run is active.
-- [ ] 8.5 Add `frontend/src/api/anomalies.ts` and `frontend/src/hooks/useAnomalies.ts` (filters `type`, `severity`, `meter_id`; detail by id).
-- [ ] 8.6 Organism `frontend/src/components/organisms/AnomaliesTable.tsx` and `frontend/src/pages/Anomalies/{AnomaliesPage.tsx,AnomaliesView.tsx}`: rows ordered by priority (meter id, type badge, severity badge, confidence, investigate link), type and severity filters, summary banner, empty state offering to run analysis.
-- [ ] 8.7 Molecule `frontend/src/components/molecules/EvidenceRow.tsx`, organisms `frontend/src/components/organisms/{EvidenceTable.tsx,ActionCard.tsx}` (metric, baseline, observed, delta, unit; recommended action card).
-- [ ] 8.8 `frontend/src/pages/Investigation/{InvestigationPage.tsx,InvestigationView.tsx}`: type, severity, confidence meter, reason, evidence table, affected window, window chart zoomed to `window +- 24h`, related event (with "no explanation" note for UNKNOWN), **Recommended action** card.
-- [ ] 8.9 Add a meter anomalies section to `frontend/src/pages/MeterDetail/MeterDetailView.tsx` (uses `useAnomalies` with `meter_id`).
-- [ ] 8.10 Verify: `npx vitest run --reporter=dot && npm run build`; harness: API + Vite dev, run analysis through visible stages to done, Anomalies shows 4 rows in order M-109, M-112, M-104, M-106, M-109 investigation shows REAL_ANOMALY, HIGH, evidence, action; M-106 shows FALSE_POSITIVE, LOW and the outage.
+- [x] 8.1 RED: `frontend/src/hooks/useAnalysisJob.test.ts`: `refetchInterval` predicate returns 500 for `pending`/`running` and `false` for `done`/`failed`/undefined; on `done` the hook invalidates `dashboard`, `meters`, `anomalies`, `meter`; trigger is disabled while active.
+- [x] 8.2 GREEN: `frontend/src/hooks/useAnalysisJob.ts` and `getAnalysis` in `frontend/src/api/analysis.ts` (mutation stores id, polls `['analysis', id]` every 500 ms).
+- [x] 8.3 Molecule `frontend/src/components/molecules/StageStepper.tsx` (7 named stages) and organism `frontend/src/components/organisms/AnalysisProgressPanel.tsx` (progress bar, current stage, link to Anomalies on `done`, error plus Retry on `failed`).
+- [x] 8.4 Wire `useAnalysisJob` and the panel into `frontend/src/pages/Dashboard/DashboardPage.tsx` and `frontend/src/pages/MeterDetail/MeterDetailPage.tsx`, replacing the slice 6 placeholder handler; trigger disabled with visible progress while a run is active.
+- [x] 8.5 Add `frontend/src/api/anomalies.ts` and `frontend/src/hooks/useAnomalies.ts` (filters `type`, `severity`, `meter_id`; detail by id).
+- [x] 8.6 Organism `frontend/src/components/organisms/AnomaliesTable.tsx` and `frontend/src/pages/Anomalies/{AnomaliesPage.tsx,AnomaliesView.tsx}`: rows ordered by priority (meter id, type badge, severity badge, confidence, investigate link), type and severity filters, summary banner, empty state offering to run analysis.
+- [x] 8.7 Molecule `frontend/src/components/molecules/EvidenceRow.tsx`, organisms `frontend/src/components/organisms/{EvidenceTable.tsx,ActionCard.tsx}` (metric, baseline, observed, delta, unit; recommended action card).
+- [x] 8.8 `frontend/src/pages/Investigation/{InvestigationPage.tsx,InvestigationView.tsx}`: type, severity, confidence meter, reason, evidence table, affected window, window chart zoomed to `window +- 24h`, related event (with "no explanation" note for UNKNOWN), **Recommended action** card.
+- [x] 8.9 Add a meter anomalies section to `frontend/src/pages/MeterDetail/MeterDetailView.tsx` (uses `useAnomalies` with `meter_id`).
+- [x] 8.10 Verify: `npx vitest run --reporter=dot && npm run build`; harness: API + Vite dev, run analysis through visible stages to done, Anomalies shows 4 rows in order M-109, M-112, M-104, M-106, M-109 investigation shows REAL_ANOMALY, HIGH, evidence, action; M-106 shows FALSE_POSITIVE, LOW and the outage.
 
 ---
 
