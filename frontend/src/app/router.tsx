@@ -1,6 +1,8 @@
 import { Navigate, useRoutes, type RouteObject } from 'react-router-dom'
 import { DashboardPage } from '../pages/Dashboard/DashboardPage'
 import { LoginPage } from '../pages/Login/LoginPage'
+import { MeterDetailPage } from '../pages/MeterDetail/MeterDetailPage'
+import { MetersPage } from '../pages/Meters/MetersPage'
 import { AppLayout } from './AppLayout'
 import { AuthGuard } from './AuthGuard'
 
@@ -11,7 +13,16 @@ export const routes: RouteObject[] = [
   { path: '/login', element: <LoginPage /> },
   {
     element: <AuthGuard />,
-    children: [{ element: <AppLayout />, children: [{ path: '/', element: <DashboardPage /> }] }],
+    children: [
+      {
+        element: <AppLayout />,
+        children: [
+          { path: '/', element: <DashboardPage /> },
+          { path: '/meters', element: <MetersPage /> },
+          { path: '/meters/:meterId', element: <MeterDetailPage /> },
+        ],
+      },
+    ],
   },
   { path: '*', element: <Navigate to="/" replace /> },
 ]

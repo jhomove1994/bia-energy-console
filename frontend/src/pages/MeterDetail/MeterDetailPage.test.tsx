@@ -1,0 +1,151 @@
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import type { ReactElement } from 'react'
+import { cloneElement } from 'react'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { setToken } from '../../api/token'
+import type { DashboardSummary, MeterDetail, MeterEvent, ReadingPoint } from '../../api/types'
+import { AppProviders } from '../../app/providers'
+import { routerFuture } from '../../app/router'
+import { createTestQueryClient, jsonResponse } from '../../test/utils'
+import { MeterDetailPage } from './MeterDetailPage'
+
+vi.mock('recharts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('recharts')>()
+  return {
+    ...actual,
+    ResponsiveContainer: ({ children }: { children: ReactElement<{ width?: number; height?: number }> }) =>
+      cloneElement(children, { width: 600, height: 200 }),
+  }
+})
+
+const fetchMock = vi.fn<typeof fetch>()
+
+const meter: MeterDetail = { meter_id: 'M-109', status: 'Critical', last_reading_at: null, total_kwh: 2180, variation_pct: 103.7, anomaly_count: 1 }
+const readings: ReadingPoint[] = Array.from({ length: 48 }, (_, i) => ({
+  timestamp: new Date(Date.UTC(2026, 8, 13, i)).toISOString(),
+  consumption_kwh: 45,
+  voltage_v: 230,
+  current_a: 5,
+  power_factor: 0.95,
+  status: 'OK',
+  baseline_kwh: 22,
+  baseline_voltage_v: 230,
+  baseline_current_a: 5,
+  baseline_power_factor: 0.95,
+}))
+const events: MeterEvent[] = [{ id: 1, timestamp: '2026-09-12T14:00:00Z', type: 'UNKNOWN', description: 'Unexplained rise' }]
+
+const pristine: DashboardSummary = {
+  meters_count: 12, total_kwh: 1, anomalies_count: 0, high_priority_count: 0, aggregate_confidence: null, last_analysis: null, summary_text: null,
+}
+const analyzed: DashboardSummary = { ...pristine, last_analysis: { id: 'a-1', status: 'done', finished_at: '2026-09-30T10:15:00Z' } }
+
+/** Answers by "METHOD path"; lists answer successive calls in order (the last repeats). */
+function mockApi(routes: Record<string, Array<Response | Error>>) {
+  const counters: Record<string, number> = {}
+  fetchMock.mockImplementation(async (input, init) => {
+    const key = `${init?.method ?? 'GET'} ${String(input)}`
+    const route = routes[key]
+    if (!route) throw new Error(`unexpected request ${key}`)
+    const i = counters[key] ?? 0
+    counters[key] = i + 1
+    const answer = route[Math.min(i, route.length - 1)]!
+    if (answer instanceof Error) throw answer
+    return answer.clone()
+  })
+}
+
+const happy = () => ({
+  'GET /api/meters/M-109': [jsonResponse(200, meter)],
+  'GET /api/meters/M-109/readings': [jsonResponse(200, { meter_id: 'M-109', points: readings })],
+  'GET /api/meters/M-109/events': [jsonResponse(200, { items: events })],
+})
+
+const calls = (key: string) => fetchMock.mock.calls.filter(([url, init]) => `${init?.method ?? 'GET'} ${String(url)}` === key).length
+
+function renderAt(path: string) {
+  render(
+    <AppProviders queryClient={createTestQueryClient()}>
+      <MemoryRouter initialEntries={[path]} future={routerFuture}>
+        <Routes>
+          <Route path="/meters/:meterId" element={<MeterDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    </AppProviders>,
+  )
+}
+
+beforeEach(() => {
+  fetchMock.mockReset()
+  vi.stubGlobal('fetch', fetchMock)
+  setToken('tok')
+})
+
+afterEach(() => vi.unstubAllGlobals())
+
+describe('MeterDetailPage', () => {
+  it('shows the meter, its four charts and its events', async () => {
+    mockApi(happy())
+    renderAt('/meters/M-109')
+
+    expect(await screen.findByRole('group', { name: 'Total consumption' })).toHaveTextContent('2,180.0 kWh')
+    expect(screen.getByRole('heading', { level: 1, name: /M-109/ })).toBeInTheDocument()
+    expect(await screen.findByText('Unexplained rise')).toBeInTheDocument()
+    expect(await screen.findAllByRole('img')).toHaveLength(4)
+    expect(screen.getByRole('img', { name: /Consumption \(kWh\).*baseline 22\.0 kWh \(\+104\.5%\)/ })).toBeInTheDocument()
+  })
+
+  it('fetches the meter, readings and events in parallel', async () => {
+    mockApi({
+      'GET /api/meters/M-109': [jsonResponse(200, meter)],
+      'GET /api/meters/M-109/readings': [jsonResponse(200, { meter_id: 'M-109', points: readings })],
+      'GET /api/meters/M-109/events': [jsonResponse(200, { items: events })],
+    })
+    renderAt('/meters/M-109')
+    // All three requests go out before any answer is awaited by the UI.
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+  })
+
+  it('shows not-found for an unknown meter', async () => {
+    mockApi({
+      'GET /api/meters/M-999': [jsonResponse(404, { error: { code: 'not_found', message: 'meter not found' } })],
+      'GET /api/meters/M-999/readings': [jsonResponse(404, { error: { code: 'not_found', message: 'meter not found' } })],
+      'GET /api/meters/M-999/events': [jsonResponse(404, { error: { code: 'not_found', message: 'meter not found' } })],
+    })
+    renderAt('/meters/M-999')
+    expect(await screen.findByText('Meter not found')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Back to meters' })).toBeInTheDocument()
+  })
+
+  it('shows the error with Retry and recovers', async () => {
+    mockApi({ ...happy(), 'GET /api/meters/M-109': [new TypeError('Failed to fetch'), jsonResponse(200, meter)] })
+    renderAt('/meters/M-109')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Cannot reach the server')
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(await screen.findByRole('group', { name: 'Total consumption' })).toBeInTheDocument()
+  })
+
+  it('keeps the meter visible when only the readings fail', async () => {
+    mockApi({ ...happy(), 'GET /api/meters/M-109/readings': [jsonResponse(500, { error: { code: 'internal', message: 'readings down' } })] })
+    renderAt('/meters/M-109')
+    expect(await screen.findByRole('group', { name: 'Total consumption' })).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent('readings down')
+  })
+
+  it('runs the analysis and refreshes the meter when it finishes', async () => {
+    mockApi({
+      ...happy(),
+      'GET /api/dashboard/summary': [jsonResponse(200, pristine), jsonResponse(200, analyzed)],
+      'POST /api/ai/analyze': [jsonResponse(202, { id: 'a-1' })],
+    })
+    renderAt('/meters/M-109')
+    await screen.findByRole('group', { name: 'Total consumption' })
+    expect(calls('GET /api/meters/M-109')).toBe(1)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Run AI Analysis' }))
+
+    expect(calls('POST /api/ai/analyze')).toBe(1)
+    await waitFor(() => expect(calls('GET /api/meters/M-109')).toBe(2))
+  })
+})

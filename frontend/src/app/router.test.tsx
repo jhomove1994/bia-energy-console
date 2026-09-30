@@ -51,6 +51,9 @@ beforeEach(() => {
         ? jsonResponse(200, summary)
         : jsonResponse(401, { error: { code: 'unauthorized', message: 'missing token' } })
     }
+    if (key === 'GET /api/meters') {
+      return jsonResponse(200, { items: [{ meter_id: 'M-109', status: 'Critical', last_reading_at: null, total_kwh: 10, variation_pct: 110 }] })
+    }
     throw new Error(`unexpected request ${key}`)
   })
 })
@@ -104,5 +107,39 @@ describe('app routes', () => {
     renderAt('/nowhere')
     expect(await screen.findByText('4 anomalies detected · 2 require priority attention')).toBeInTheDocument()
     expect(currentPath().textContent).toBe('/')
+  })
+})
+
+describe('meters routes', () => {
+  it('opens the meters list from the sidebar and marks it as current', async () => {
+    window.localStorage.setItem('energy.token', 'tok')
+    renderAt('/')
+    await screen.findByText('4 anomalies detected · 2 require priority attention')
+
+    await userEvent.click(screen.getByRole('link', { name: 'Meters' }))
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Meters' })).toBeInTheDocument()
+    expect(currentPath().textContent).toBe('/meters')
+    expect(screen.getByRole('link', { name: 'Meters' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Dashboard' })).not.toHaveAttribute('aria-current')
+  })
+
+  it('opens a meter from its row', async () => {
+    window.localStorage.setItem('energy.token', 'tok')
+    fetchMock.mockImplementation(async (input) => {
+      const url = String(input)
+      if (url === '/api/meters') {
+        return jsonResponse(200, { items: [{ meter_id: 'M-109', status: 'Critical', last_reading_at: null, total_kwh: 10, variation_pct: 110 }] })
+      }
+      return jsonResponse(404, { error: { code: 'not_found', message: 'meter not found' } })
+    })
+    renderAt('/meters')
+
+    await userEvent.click(await screen.findByRole('link', { name: 'M-109' }))
+
+    expect(currentPath().textContent).toBe('/meters/M-109')
+    expect(await screen.findByText('Meter not found')).toBeInTheDocument()
+    // The shell keeps the Meters entry current on a detail page.
+    expect(screen.getByRole('link', { name: 'Meters' })).toHaveAttribute('aria-current', 'page')
   })
 })
