@@ -21,6 +21,8 @@ Every tunable engine parameter lives in `engine.Config` (`backend/internal/engin
 
 ## Consumption detection
 
+Hourly and daily thresholds are independent. Raising `HourlyDevPct` only changes what the hourly detector flags; daily variation keeps its own `DailyVarPct` and can still report a day (for example a +47% day) that the hourly gate no longer flags. Each threshold is overridable on its own.
+
 | Field | Default | Healthy-envelope evidence | Per-meter justification |
 |-------|---------|---------------------------|-------------------------|
 | `HourlyDevPct` | 0.30 | Largest healthy hourly deviation is 17% (margin about 1.8x). | M-104 +47%, M-109 +109%, M-106 about -80%: all clear the gate. |

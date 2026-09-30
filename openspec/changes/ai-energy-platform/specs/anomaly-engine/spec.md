@@ -400,6 +400,8 @@ All thresholds MUST live in one engine configuration with documented defaults.
 
 #### Scenario: Override a threshold
 
-- GIVEN the effect-size threshold raised from 30% to 60%
-- WHEN the engine runs on the demo dataset
-- THEN findings whose deviation is below 60% are no longer produced
+- GIVEN the hourly effect-size threshold (`HourlyDevPct`) raised from 30% to 60%
+- WHEN the engine runs
+- THEN the hourly detector no longer flags hourly deviations below 60%
+- AND every other detector (for example daily variation, `DailyVarPct`) keeps its own threshold and is unaffected
+- AND each threshold is overridable independently of the others
