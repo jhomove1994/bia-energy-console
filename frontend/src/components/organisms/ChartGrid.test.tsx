@@ -37,6 +37,24 @@ describe('ChartGrid', () => {
     }
   })
 
+  it('zooms every chart to a time range', () => {
+    // Readings at 10:00, 11:00, 12:00 and 13:00; the range keeps 11:00 to 12:00.
+    render(<ChartGrid readings={readings} events={[]} range={{ from: Date.parse('2026-09-12T11:00:00Z'), to: Date.parse('2026-09-12T12:00:00Z') }} />)
+    expect(screen.getAllByRole('img')).toHaveLength(4)
+    for (const chart of screen.getAllByRole('img')) expect(chart).toHaveAccessibleName(/over 2 readings/)
+  })
+
+  it('shows the whole series without a range', () => {
+    render(<ChartGrid readings={readings} events={[]} />)
+    for (const chart of screen.getAllByRole('img')) expect(chart).toHaveAccessibleName(/over 4 readings/)
+  })
+
+  it('highlights anomaly windows on every chart', () => {
+    render(<ChartGrid readings={readings} events={[]} windows={[{ start: '2026-09-12T11:00:00Z', end: '2026-09-12T12:00:00Z', severity: 'HIGH', label: 'Level shift up' }]} />)
+    for (const chart of screen.getAllByRole('img')) expect(chart).toHaveAccessibleName(/1 anomaly window highlighted: Level shift up, High severity/)
+    expect(screen.getAllByText('Anomaly window')).toHaveLength(4)
+  })
+
   it('shows the empty message on every chart without readings', () => {
     render(<ChartGrid readings={[]} events={[]} />)
     expect(screen.getAllByText('No readings to chart yet.')).toHaveLength(4)

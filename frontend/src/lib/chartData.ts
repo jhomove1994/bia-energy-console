@@ -46,17 +46,20 @@ export interface AnomalyWindow {
   start: string
   end: string
   severity: Severity
+  /** Short name of the anomaly, used in the chart's text alternative. */
+  label?: string
 }
 
 export interface ReferenceAreaRange {
   x1: number
   x2: number
   tone: SeverityToken
+  label?: string
 }
 
-/** Anomaly windows as x ranges tinted by severity (anomaly data arrives with the anomalies slice). */
+/** Anomaly windows as x ranges tinted by severity. */
 export function toReferenceAreas(windows: AnomalyWindow[]): ReferenceAreaRange[] {
-  return windows.map((w) => ({ x1: Date.parse(w.start), x2: Date.parse(w.end), tone: severityToken(w.severity) }))
+  return windows.map((w) => ({ x1: Date.parse(w.start), x2: Date.parse(w.end), tone: severityToken(w.severity), label: w.label }))
 }
 
 export interface ReferenceLineMarker {

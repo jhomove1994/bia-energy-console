@@ -91,6 +91,10 @@ describe('toReferenceAreas', () => {
   it('is empty when there are no windows', () => {
     expect(toReferenceAreas([])).toEqual([])
   })
+  it('keeps the label of a window so the chart can name it in text', () => {
+    const [area] = toReferenceAreas([{ start: '2026-09-12T14:00:00Z', end: '2026-09-13T02:00:00Z', severity: 'MEDIUM', label: 'Level shift up' }])
+    expect(area).toMatchObject({ tone: 'sev-medium', label: 'Level shift up' })
+  })
 })
 
 describe('toReferenceLines', () => {

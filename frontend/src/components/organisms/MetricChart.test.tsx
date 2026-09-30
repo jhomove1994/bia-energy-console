@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import type { ReactElement } from 'react'
 import { cloneElement } from 'react'
-import { METRICS, toChartSeries } from '../../lib/chartData'
+import { METRICS, toChartSeries, toReferenceAreas } from '../../lib/chartData'
 import type { ReadingPoint } from '../../api/types'
 import { ChartTooltipContent, MetricChart } from './MetricChart'
 
@@ -52,6 +52,28 @@ describe('MetricChart', () => {
     render(<MetricChart metric={pf} series={toChartSeries([reading(0, 1, 1)], pf)} />)
     expect(screen.queryByText('Baseline')).not.toBeInTheDocument()
     expect(screen.getByRole('img', { name: /Power factor \(PF\).*latest 0\.95 PF/ })).not.toHaveAccessibleName(/baseline/)
+  })
+
+  it('names each highlighted anomaly window in the text alternative and the legend', () => {
+    const areas = toReferenceAreas([{ start: '2026-09-12T14:00:00Z', end: '2026-09-13T02:00:00Z', severity: 'HIGH', label: 'Level shift up' }])
+    render(<MetricChart metric={kwh} series={series} areas={areas} />)
+    expect(screen.getByRole('img', { name: /1 anomaly window highlighted: Level shift up, High severity, 12 Sep 2026, 14:00 UTC – 13 Sep 2026, 02:00 UTC/ })).toBeInTheDocument()
+    expect(screen.getByText('Anomaly window')).toBeInTheDocument()
+  })
+
+  it('counts several windows and falls back to the severity when a window has no label', () => {
+    const areas = toReferenceAreas([
+      { start: '2026-09-12T14:00:00Z', end: '2026-09-12T20:00:00Z', severity: 'LOW' },
+      { start: '2026-09-13T00:00:00Z', end: '2026-09-13T05:00:00Z', severity: 'MEDIUM' },
+    ])
+    render(<MetricChart metric={kwh} series={series} areas={areas} />)
+    expect(screen.getByRole('img', { name: /2 anomaly windows highlighted: Low severity, 12 Sep 2026, 14:00–20:00 UTC; Medium severity, 13 Sep 2026, 00:00–05:00 UTC/ })).toBeInTheDocument()
+  })
+
+  it('shows no window text or legend entry without windows', () => {
+    render(<MetricChart metric={kwh} series={series} />)
+    expect(screen.queryByText('Anomaly window')).not.toBeInTheDocument()
+    expect(screen.getByRole('img')).not.toHaveAccessibleName(/anomaly window/)
   })
 
   it('says so when there are no readings', () => {

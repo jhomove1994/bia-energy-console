@@ -9,7 +9,8 @@ import {
   type SeriesSummary,
 } from '../../lib/chartData'
 import { chartTheme } from '../../lib/chartTheme'
-import { formatAxisTick, formatDateTime, formatNumber, formatSignedPercent } from '../../lib/format'
+import { formatAxisTick, formatDateTime, formatNumber, formatSignedPercent, formatWindow } from '../../lib/format'
+import type { SeverityToken } from '../../lib/status'
 import { Card } from '../atoms/Card'
 
 export interface MetricChartProps {
@@ -25,12 +26,24 @@ export interface MetricChartProps {
 
 const withUnit = (metric: MetricConfig, value: number): string => `${formatNumber(value, metric.decimals)} ${metric.unit}`
 
-function describeSeries(metric: MetricConfig, s: SeriesSummary): string {
+const severityOfTone: Record<SeverityToken, string> = { 'sev-high': 'High', 'sev-medium': 'Medium', 'sev-low': 'Low' }
+
+/** Windows are tinted by severity, so the same information is spelled out for screen readers. */
+function describeAreas(areas: ReferenceAreaRange[]): string {
+  if (areas.length === 0) return ''
+  const items = areas.map((a) => {
+    const when = formatWindow(new Date(a.x1).toISOString(), new Date(a.x2).toISOString())
+    return `${a.label ? `${a.label}, ` : ''}${severityOfTone[a.tone]} severity, ${when}`
+  })
+  return ` ${areas.length} anomaly ${areas.length === 1 ? 'window' : 'windows'} highlighted: ${items.join('; ')}.`
+}
+
+function describeSeries(metric: MetricConfig, s: SeriesSummary, areas: ReferenceAreaRange[]): string {
   const baseline =
     s.latestBaseline !== null && s.latestDeltaPct !== null
       ? `, baseline ${withUnit(metric, s.latestBaseline)} (${formatSignedPercent(s.latestDeltaPct)})`
       : ''
-  return `${metric.title} (${metric.unit}): latest ${withUnit(metric, s.latest)}${baseline}; range ${formatNumber(s.min, metric.decimals)} to ${withUnit(metric, s.max)} over ${s.count} readings.`
+  return `${metric.title} (${metric.unit}): latest ${withUnit(metric, s.latest)}${baseline}; range ${formatNumber(s.min, metric.decimals)} to ${withUnit(metric, s.max)} over ${s.count} readings.${describeAreas(areas)}`
 }
 
 /** Hover card: UTC time, observed value, baseline and the deviation from it. */
@@ -60,7 +73,7 @@ export function ChartTooltipContent({ metric, point }: { metric: MetricConfig; p
   )
 }
 
-function Legend({ hasBaseline }: { hasBaseline: boolean }) {
+function Legend({ hasBaseline, hasWindows }: { hasBaseline: boolean; hasWindows: boolean }) {
   return (
     <ul className="flex items-center gap-4 text-xs text-muted" aria-label="Legend">
       <li className="flex items-center gap-1.5">
@@ -77,6 +90,12 @@ function Legend({ hasBaseline }: { hasBaseline: boolean }) {
           Baseline
         </li>
       )}
+      {hasWindows && (
+        <li className="flex items-center gap-1.5">
+          <span aria-hidden="true" className="h-3 w-5 rounded-sm bg-muted/20 ring-1 ring-inset ring-muted/40" />
+          Anomaly window
+        </li>
+      )}
     </ul>
   )
 }
@@ -90,12 +109,12 @@ export function MetricChart({ metric, series, areas = [], lines = [], domain }: 
     <Card className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h3 className="text-sm font-semibold text-text">{metric.title}</h3>
-        <Legend hasBaseline={hasBaseline} />
+        <Legend hasBaseline={hasBaseline} hasWindows={areas.length > 0} />
       </div>
 
       {!summary && <p className="py-10 text-center text-sm text-muted">No readings to chart yet.</p>}
       {summary && (
-        <div role="img" aria-label={describeSeries(metric, summary)} className="h-48 w-full sm:h-56">
+        <div role="img" aria-label={describeSeries(metric, summary, areas)} className="h-48 w-full sm:h-56">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={series} margin={{ top: 8, right: 8, bottom: 0, left: 0 }} accessibilityLayer={false}>
               <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" vertical={false} />
