@@ -215,7 +215,8 @@ Commits (work units):
 | 8f00432 | feat(engine): chain detection to ranking in Analyze with a stage hook (4.9, 4.10) |
 | 519dbf8 | test(engine): validate the demo dataset outcomes, silence, shift and rename invariance (4.11, 4.12) |
 | 8474ea5 | test(engine): guard the engine sources against meter and date literals (4.13) |
-| (docs) | docs: document every engine threshold with its dataset evidence (4.14) and progress records |
+| 07b4d3c | docs: document every engine threshold with its dataset evidence (4.14) |
+| eb85725 | docs(openspec): mark slice 4b complete and record apply progress |
 
 API (all pure): `Band`, `SeverityScore(raw, type, cfg)`, `Confidence`, `ConfidenceLabel`, `Priority(sev, conf, type)`, `Rank(as)`, `Score(Classified, series, baseline, cfg) domain.Anomaly`, `Recommend(type, sign, kind)`, `Detect(series, b, cfg)`, `Analyze(Input, cfg, hook) Result`. `app.Explainer` port plus `adapters/explain.Template` (`New()`).
 
