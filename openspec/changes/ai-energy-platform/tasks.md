@@ -125,23 +125,23 @@ Design deviation D4: `engine/baseline.go` lives here.
 Branch: `feat/03-engine-detectors` (base slice 2 branch). Forecast: ~520 lines (size:exception risk). Task count: 17.
 Spec coverage: anomaly-engine (Tiny MAD does not fire, Consumption effect gate, Persistence and spikes, Daily variation evidence, Data-quality oscillation detection, Gap and status detection, Electrical consistency ratio, Hourly pattern break as evidence (detector part), Configurable parameters).
 
-- [ ] 3.1 RED: `backend/internal/engine/config_test.go` asserts every `DefaultConfig()` value from design section 2.2 and that overriding `HourlyDevPct` to 0.60 changes results of a small synthetic series.
-- [ ] 3.2 GREEN: complete `backend/internal/engine/config.go` with all thresholds from design section 2.2 (short names only; per-meter justifications stay in README, no meter ids in comments).
-- [ ] 3.3 Create test helper `backend/internal/engine/synth_test.go`: `synth(days, profile, mutate func)` builds hourly readings with V, A, PF, kWh, ratio near 1.05 for synthetic meter ids like `X-1`.
-- [ ] 3.4 RED: `backend/internal/engine/detect_test.go` hourly tests: +25% with z 8 not flagged; +40% with z 2 not flagged; +47% with z 6 flagged; 12% deviation with near-zero MAD not flagged; 6 consecutive same-sign hours is persistent; 5 hours is a spike; 3 flagged hours is a spike; 4 up then 4 down produces neither persistent; gap of <= 2 unflagged hours merges the run; a single point >= 60% is a spike.
-- [ ] 3.5 GREEN: `backend/internal/engine/detect.go` (hourly flag, `Signal` type, episode builder, persistent/spike rules).
-- [ ] 3.6 RED: `detect_test.go` daily variation: day +47% flagged; day +-2% silent; partial day scaled by its own hours' medians.
-- [ ] 3.7 GREEN: daily variation in `backend/internal/engine/detect.go`.
-- [ ] 3.8 RED: `backend/internal/engine/quality_test.go` jumps and DQ cluster: V toggling 202/240 V every 3 h for a day is DQ; a single +110% current step is not DQ; three same-direction voltage jumps are not DQ; down then up (one reversal) is not DQ; PF quantized jumps counted; window merge across metrics within 24 h.
-- [ ] 3.9 GREEN: jumps (V > 8, symmetric current > 50%, PF >= 0.15) and oscillation clustering in `backend/internal/engine/quality.go`.
-- [ ] 3.10 RED: `quality_test.go` ratio: stable +25% shift is corroboration, not DQ; deviant hours of both signs within 24 h (0.58 to 4.22) is unstable (DQ seed); stable run < 6 h without consumption episode is dropped; ratio skips rows with non-positive denominator.
-- [ ] 3.11 GREEN: ratio deviation stable/unstable in `backend/internal/engine/quality.go`.
-- [ ] 3.12 RED: `quality_test.go` gaps and status: a missing hourly timestamp yields a gap signal at that timestamp; `SENSOR_FAULT` yields a status signal; a clean series yields nothing.
-- [ ] 3.13 GREEN: gap and status runs in `backend/internal/engine/quality.go`.
-- [ ] 3.14 RED: `backend/internal/engine/pattern_test.go`: a uniform +47% step (correlation about 0.97, shape about 3%) is not a break; a reshaped day (corr < 0.80 and shape > 15%) is a break; partial days skipped.
-- [ ] 3.15 GREEN: `backend/internal/engine/pattern.go` (Pearson + normalized shape deviation, both required).
-- [ ] 3.16 RED then GREEN: `backend/internal/engine/purity_test.go` runs `go list -deps` for the engine package and fails if any import is outside `energy/internal/domain` or the stdlib.
-- [ ] 3.17 REFACTOR + verify: `go vet ./...`, `go test ./... -count=1`; `rg -n "M-\d+" backend/internal/engine --glob '!*_test.go'` returns nothing.
+- [x] 3.1 RED: `backend/internal/engine/config_test.go` asserts every `DefaultConfig()` value from design section 2.2 and that overriding `HourlyDevPct` to 0.60 changes results of a small synthetic series.
+- [x] 3.2 GREEN: complete `backend/internal/engine/config.go` with all thresholds from design section 2.2 (short names only; per-meter justifications stay in README, no meter ids in comments).
+- [x] 3.3 Create test helper `backend/internal/engine/synth_test.go`: `synth(days, profile, mutate func)` builds hourly readings with V, A, PF, kWh, ratio near 1.05 for synthetic meter ids like `X-1`.
+- [x] 3.4 RED: `backend/internal/engine/detect_test.go` hourly tests: +25% with z 8 not flagged; +40% with z 2 not flagged; +47% with z 6 flagged; 12% deviation with near-zero MAD not flagged; 6 consecutive same-sign hours is persistent; 5 hours is a spike; 3 flagged hours is a spike; 4 up then 4 down produces neither persistent; gap of <= 2 unflagged hours merges the run; a single point >= 60% is a spike.
+- [x] 3.5 GREEN: `backend/internal/engine/detect.go` (hourly flag, `Signal` type, episode builder, persistent/spike rules).
+- [x] 3.6 RED: `detect_test.go` daily variation: day +47% flagged; day +-2% silent; partial day scaled by its own hours' medians.
+- [x] 3.7 GREEN: daily variation in `backend/internal/engine/detect.go`.
+- [x] 3.8 RED: `backend/internal/engine/quality_test.go` jumps and DQ cluster: V toggling 202/240 V every 3 h for a day is DQ; a single +110% current step is not DQ; three same-direction voltage jumps are not DQ; down then up (one reversal) is not DQ; PF quantized jumps counted; window merge across metrics within 24 h.
+- [x] 3.9 GREEN: jumps (V > 8, symmetric current > 50%, PF >= 0.15) and oscillation clustering in `backend/internal/engine/quality.go`.
+- [x] 3.10 RED: `quality_test.go` ratio: stable +25% shift is corroboration, not DQ; deviant hours of both signs within 24 h (0.58 to 4.22) is unstable (DQ seed); stable run < 6 h without consumption episode is dropped; ratio skips rows with non-positive denominator.
+- [x] 3.11 GREEN: ratio deviation stable/unstable in `backend/internal/engine/quality.go`.
+- [x] 3.12 RED: `quality_test.go` gaps and status: a missing hourly timestamp yields a gap signal at that timestamp; `SENSOR_FAULT` yields a status signal; a clean series yields nothing.
+- [x] 3.13 GREEN: gap and status runs in `backend/internal/engine/quality.go`.
+- [x] 3.14 RED: `backend/internal/engine/pattern_test.go`: a uniform +47% step (correlation about 0.97, shape about 3%) is not a break; a reshaped day (corr < 0.80 and shape > 15%) is a break; partial days skipped.
+- [x] 3.15 GREEN: `backend/internal/engine/pattern.go` (Pearson + normalized shape deviation, both required).
+- [x] 3.16 RED then GREEN: `backend/internal/engine/purity_test.go` runs `go list -deps` for the engine package and fails if any import is outside `energy/internal/domain` or the stdlib.
+- [x] 3.17 REFACTOR + verify: `go vet ./...`, `go test ./... -count=1`; `rg -n "M-\d+" backend/internal/engine --glob '!*_test.go'` returns nothing.
 
 ---
 

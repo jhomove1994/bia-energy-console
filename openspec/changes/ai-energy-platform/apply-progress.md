@@ -101,5 +101,60 @@ Commits (work units):
 - `DashboardService` takes an injectable `LatestDoneSource` (default `NoLatestDone`); a triangulating test already exercises the done-analysis path so slice 5 only supplies the repository.
 - Size: slice 2 adds 2,854 lines across 28 files (1,459 in tests) vs ~560 forecast. `size:exception` accepted for all PRs (user decision 2026-09-30). Commits are 8 small work units.
 
+## Batch 3: Slice 3 (complete)
+
+Completed tasks: 3.1 - 3.17 (52/125 overall).
+
+### Slice 3 (branch `feat/03-engine-detectors`, base `feat/02-read-api-auth`)
+
+Commits (work units):
+| Hash | Message |
+|------|---------|
+| 8cf62f6 | feat(engine): add detector thresholds to Config with documented defaults (3.1, 3.2) |
+| c136904 | feat(engine): detect hourly consumption episodes as persistent shifts or spikes (3.3, 3.4, 3.5) |
+| d5559e7 | feat(engine): report daily variation scaled by the hours each day contains (3.6, 3.7) |
+| b052836 | feat(engine): detect electrical jumps and oscillation clusters (3.8, 3.9) |
+| 636aefd | feat(engine): classify electrical ratio deviations as stable or unstable (3.10, 3.11) |
+| 8ff127f | feat(engine): detect missing readings and non-OK status runs (3.12, 3.13) |
+| 046dbf4 | feat(engine): detect hourly pattern breaks with correlation and shape (3.14, 3.15) |
+| f7082fe | test(engine): guard that the engine imports only domain and stdlib (3.16) |
+
+Detector API (all pure, take a sorted per-meter series): `DetectConsumption`, `DetectDailyVariation`, `DetectJumps` (DQ clusters + residual single jumps), `DetectRatio`, `DetectGaps`, `DetectStatus`, `DetectPatternBreaks`. All return `[]Signal` (kinds `persistent_shift|spike|daily_variation|jump|dq_cluster|ratio_stable|ratio_unstable|pattern_break|gap|status`, role seed|secondary, numeric evidence: baseline, observed, delta %, unit, counts). There is no aggregator `Detect` yet; slice 4a (`Correlate`) or 4b (`Analyze`) chains them.
+
+### TDD Cycle Evidence (slice 3)
+| Task | Test file | RED (observed) | GREEN | TRIANGULATE | REFACTOR |
+|------|-----------|----------------|-------|-------------|----------|
+| 3.1/3.2 config | `engine/config_test.go` | `c.MergeGapHours undefined` build failure | ok | every default asserted (15 int + 19 float fields) | gofmt |
+| 3.3-3.5 hourly | `engine/detect_test.go`, `synth_test.go` | `undefined: Signal, DetectConsumption` | ok | +25% high z, +40% low z, +47%, tiny MAD 12%, 6 h persistent, 5 h spike, 3 flagged spike, 4 up/4 down, gap 2 merges / gap 3 splits, single point 70% spike / 40% dropped, evidence numbers, insufficient history, `HourlyDevPct=0.60` override | gofmt |
+| 3.6/3.7 daily | `detect_test.go` | `undefined: DetectDailyVariation` | ok | +47% day, +-2% silent, -40% negative sign, partial day healthy vs tripled (+200%), insufficient history | none |
+| 3.8/3.9 jumps/DQ | `quality_test.go` | `undefined: DetectJumps` | ok | V toggle 202/240, single +110% current step, ramp of 3 same-direction jumps, down/up, PF quantized, sub-threshold steps, cross-metric merge <=24 h, far apart stay separate, jump across a gap ignored | replaced pointer-into-slice with index in span builder |
+| 3.10/3.11 ratio | `quality_test.go` | `undefined: DetectRatio` | ok | stable +25% x12 h, short run not standalone (+config override), unstable both signs (0.58/4.22), same-sign never unstable, PF=0 rows skipped, no baseline ratio | none |
+| 3.12/3.13 gap/status | `quality_test.go` | `undefined: DetectGaps` | ok after fixing my own test helper (`hourlySeries` overwrote `Status`; `synth` now applies the mutation after building) | single gap, 3-hour run + separate run, SENSOR_FAULT run, two different statuses, clean series silent | synth helper |
+| 3.14/3.15 pattern | `engine/pattern_test.go` | `undefined: DetectPatternBreaks` | ok | uniform +47% with noise, reversed day, amplified shape (corr 1) not a break, both thresholds configurable, partial day, flat profile | none |
+| 3.16 purity | `engine/purity_test.go` | temporary `import _ "energy/internal/platform"` made it fail with the expected message; removed | ok | n/a | n/a |
+| 3.17 refactor/verify | n/a | n/a | vet clean, gofmt empty, all 8 packages ok, no `M-\d+` / `2026-09-` in non-test engine files | n/a | done |
+
+### Work Unit Evidence (slice 3)
+| Evidence | Value |
+|---|---|
+| Focused test command | `cd backend && go test ./internal/engine/... -count=1`: ok; full `go test ./... -count=1`: ok for 8 packages |
+| Runtime harness | N/A: pure library. Throwaway sanity run (deleted, not committed) of all detectors over `data/readings.csv`: healthy meters (101,102,103,105,107,108,110,111) yield zero seed detections; M-107 and M-110 only get single-hour stable-ratio secondaries (1 h, not standalone) |
+| Rollback boundary | `backend/internal/engine/{config,detect,quality,pattern}.go` and their tests |
+
+### Sanity counts (throwaway, per meter; pers=persistent, day=daily var, dq=DQ cluster, rS/rU=ratio stable/unstable, pat=pattern break)
+- M-104 pers=1 day=4 | M-106 pers=1 day=1 jump=2 pat=1 | M-109 pers=1 day=3 jump=2 rS=1(58 h, standalone) pat=1 | M-112 dq=1 rS=1(1 h) rU=1
+- Healthy: M-101, 102, 103, 105, 108, 111 zero everything; M-107 rS=2 (1 h each); M-110 rS=1 (1 h).
+- No gap or status signals anywhere; no spikes anywhere.
+
+### Deviations / notes (slice 3)
+- Signal shape: flat `Signal` struct (kind, metric, start/end, sign, role, hours/flagged/count, baseline/observed/delta_pct/unit, plus `Jumps`, `Corr`, `Shape`, `Standalone`, `Detail`). No separate `Persistent` flag: the kind carries it. `DeltaPct` is in percent (47.0 = +47%).
+- Task 3.10 "stable run < 6 h without consumption episode is dropped": the drop belongs to orphan promotion in slice 4a. The detector exposes `Standalone` (hours >= `RatioStandaloneMinHours`), which 4a uses; tests assert the flag and that it follows the Config value.
+- Spec scenario "+25% with z 8": with the 3% MAD floor a 25% deviation has z about 5.6 at most, so the test uses that value (still above 3.5) to prove the effect gate.
+- `DetectJumps` does not repeat oscillating jumps as single-jump signals; only non-oscillating jumps are emitted as `KindJump` secondaries. Jumps are measured only between readings exactly 1 h apart.
+- Unstable ratio: deviant hours are grouped by `DQWindowHours` distance; stable runs by same sign and `MergeGapHours`.
+- Cluster merge across metrics uses `DQWindowHours` (24) as the gap.
+- Config carries fields for later slices (events, correlation, severity, confidence) so the table is complete per task 3.2.
+- Size: slice 3 adds 1,805 lines across 10 files (about 950 in tests) vs ~520 forecast. `size:exception` accepted for all PRs.
+
 ## Remaining
-Slices 3 - 9 (90 tasks) not started.
+Slices 4a - 9 (73 tasks) not started.
