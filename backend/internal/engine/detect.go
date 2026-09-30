@@ -191,3 +191,62 @@ func buildEpisode(series []domain.Reading, b Baseline, cfg Config, run []hourFla
 		Unit:     "kWh",
 	}, true
 }
+
+// dayGroups splits a sorted series into runs of readings sharing a UTC date.
+func dayGroups(series []domain.Reading) [][]domain.Reading {
+	var out [][]domain.Reading
+	start := 0
+	for i := 1; i <= len(series); i++ {
+		if i == len(series) || !sameUTCDay(series[i].TS, series[start].TS) {
+			out = append(out, series[start:i])
+			start = i
+		}
+	}
+	return out
+}
+
+func sameUTCDay(a, b time.Time) bool {
+	ay, am, ad := a.UTC().Date()
+	by, bm, bd := b.UTC().Date()
+	return ay == by && am == bm && ad == bd
+}
+
+// DetectDailyVariation compares the energy of each calendar day (UTC) with the
+// sum of the hourly medians of the hours that day actually contains, so a
+// partial day is scaled by its own hours. Days whose relative deviation
+// reaches DailyVarPct are reported as secondary evidence.
+func DetectDailyVariation(series []domain.Reading, b Baseline, cfg Config) []Signal {
+	if b.InsufficientHistory {
+		return nil
+	}
+	var out []Signal
+	for _, day := range dayGroups(series) {
+		var expected, observed float64
+		for _, r := range day {
+			expected += b.KWh[r.TS.UTC().Hour()].Median
+			observed += r.KWh
+		}
+		if expected <= 0 {
+			continue
+		}
+		variation := (observed - expected) / expected
+		if math.Abs(variation) < cfg.DailyVarPct {
+			continue
+		}
+		out = append(out, Signal{
+			MeterID:  day[0].MeterID,
+			Kind:     KindDailyVariation,
+			Metric:   "daily_kwh",
+			Start:    day[0].TS,
+			End:      day[len(day)-1].TS,
+			Sign:     sign(variation),
+			Role:     RoleSecondary,
+			Hours:    len(day),
+			Baseline: expected,
+			Observed: observed,
+			DeltaPct: pct(observed, expected),
+			Unit:     "kWh",
+		})
+	}
+	return out
+}

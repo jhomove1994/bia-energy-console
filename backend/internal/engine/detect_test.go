@@ -234,3 +234,76 @@ func TestHourlyDevPctOverrideChangesResults(t *testing.T) {
 		t.Fatalf("HourlyDevPct=0.60 still flags a 47%% shift: %+v", got)
 	}
 }
+
+func dailyVariation(series []domain.Reading, cfg Config) []Signal {
+	return DetectDailyVariation(series, BuildBaseline(series, cfg), cfg)
+}
+
+func TestDailyVariationFlagsWholeDay(t *testing.T) {
+	cfg := DefaultConfig()
+	series := synth(10, shapedProfile(), hoursAt(8, span(0, 23), scaleKWh(1.47)))
+	got := dailyVariation(series, cfg)
+	if len(got) != 1 {
+		t.Fatalf("signals = %+v", got)
+	}
+	s := got[0]
+	if s.Kind != KindDailyVariation || s.Role != RoleSecondary || s.Sign != 1 {
+		t.Fatalf("signal = %+v", s)
+	}
+	near(t, "delta pct", s.DeltaPct, 47)
+	if s.Unit != "kWh" || s.Hours != 24 {
+		t.Fatalf("unit/hours = %q/%d", s.Unit, s.Hours)
+	}
+	if !s.Start.Equal(testStart.AddDate(0, 0, 8)) {
+		t.Fatalf("start = %v", s.Start)
+	}
+}
+
+func TestDailyVariationIgnoresNormalDaysAndKeepsSign(t *testing.T) {
+	cfg := DefaultConfig()
+	// +2% and -2% days are silent.
+	series := synth(10, shapedProfile(), func(d, h int, r *domain.Reading) {
+		hoursAt(8, span(0, 23), scaleKWh(1.02))(d, h, r)
+		hoursAt(9, span(0, 23), scaleKWh(0.98))(d, h, r)
+	})
+	if got := dailyVariation(series, cfg); len(got) != 0 {
+		t.Fatalf("normal days flagged: %+v", got)
+	}
+	// A -40% day is flagged with a negative sign.
+	series = synth(10, shapedProfile(), hoursAt(8, span(0, 23), scaleKWh(0.6)))
+	got := dailyVariation(series, cfg)
+	if len(got) != 1 || got[0].Sign != -1 {
+		t.Fatalf("signals = %+v", got)
+	}
+}
+
+func TestDailyVariationScalesPartialDaysByTheirOwnHours(t *testing.T) {
+	cfg := DefaultConfig()
+	partial := func(series []domain.Reading) []domain.Reading {
+		// keep only hours 0..11 of the last day
+		return series[:len(series)-12]
+	}
+	// Healthy partial day: its energy is about half of DailyKWh but equals the
+	// baseline of the hours it contains, so it is silent.
+	healthy := partial(synth(10, shapedProfile(), nil))
+	if got := dailyVariation(healthy, cfg); len(got) != 0 {
+		t.Fatalf("healthy partial day flagged: %+v", got)
+	}
+	// Tripled partial day is flagged against its own hours.
+	tripled := partial(synth(10, shapedProfile(), hoursAt(9, span(0, 11), scaleKWh(3))))
+	got := dailyVariation(tripled, cfg)
+	if len(got) != 1 {
+		t.Fatalf("signals = %+v", got)
+	}
+	near(t, "delta pct", got[0].DeltaPct, 200)
+	if got[0].Hours != 12 {
+		t.Fatalf("hours = %d, want 12", got[0].Hours)
+	}
+}
+
+func TestDailyVariationSkipsInsufficientHistory(t *testing.T) {
+	series := synth(3, shapedProfile(), hoursAt(2, span(0, 23), scaleKWh(3)))
+	if got := dailyVariation(series, DefaultConfig()); len(got) != 0 {
+		t.Fatalf("signals = %+v", got)
+	}
+}
