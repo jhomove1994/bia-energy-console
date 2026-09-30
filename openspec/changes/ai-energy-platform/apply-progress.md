@@ -376,5 +376,51 @@ Test summary: 68 tests in 11 files; 0 stderr warnings after cleanup. No CSS-clas
 - Design token `--muted` darkened from `#64748B` to `#5B6B80` for AA contrast; teal `#0EA5A4` is reserved for non-text use with `#0F766E` for buttons/links (contrast). Recorded above.
 - Size: 62 files changed, 2,447 additions (lockfile excluded), about 900 of them tests, in 11 commits. `size:exception` accepted for all PRs.
 
+## Batch 8: Slice 7 (complete)
+
+Completed tasks: 7.1 - 7.10 (104/125 overall).
+
+### Slice 7 (branch `feat/07-meters-detail`, base `feat/06-web-shell-dashboard`)
+
+Commits (work units):
+| Hash | Message |
+|------|---------|
+| cedbbae | build(frontend): add recharts 3.10.1 for meter charts |
+| 8abf928 | feat(frontend): add meters API client and query hooks (7.1, 7.2) |
+| 0ef35c0 | feat(frontend): add meters list with URL-driven search, status filter and sort (7.3, 7.4, 7.5) |
+| 0f61cbd | feat(frontend): add chart data helpers for baseline series, windows, events and zoom (7.6) |
+| 7f54a8b | feat(frontend): add MetricChart with baseline overlay, tooltip and text alternative (7.7) |
+| 41ce69c | feat(frontend): add ChartGrid with shared time range and EventTimeline (7.8) |
+| 5a84cc9 | refactor(frontend): extract the run-analysis trigger into a shared hook (7.9) |
+| ca4d262 | feat(frontend): add meter detail page with charts, events and routes (7.9) |
+| 2db2a43 | style(frontend): widen chart y-axis so unit labels do not overlap ticks |
+
+### TDD Cycle Evidence (slice 7)
+| Task | Test file | RED (observed) | GREEN | TRIANGULATE | REFACTOR |
+|------|-----------|----------------|-------|-------------|----------|
+| 7.1/7.2 | `api/meters.test.ts` | `Failed to resolve import "./meters"` | 5 passed | no filters, all four, empty skipped, items unwrapped, encoded id for detail/readings/events | none |
+| 7.3-7.5 | `SearchFilterBar.test.tsx`, `MetersTable.test.tsx`, `MetersView.test.tsx`, `MetersPage.test.tsx`, `status.test.ts` (variationTone) | 4 files `Failed to resolve import`, `variationTone is not defined` | 93 passed | typing `109` leaves M-109 and sets `?q=109`; shared link with status+sort+order; status and sort through the URL; clear filters; error then Retry; null variation placeholder; row links | MemoryRouter tests adopt router future flags (no warnings) |
+| 7.6/7.7 | `lib/chartData.test.ts`, `MetricChart.test.tsx`, `format.test.ts` (axis tick, number) | `Failed to resolve import "./chartData"` / `"./MetricChart"`; formatAxisTick not defined | 15 + 17 passed | per-metric baseline pairing, 0 or missing baseline is null, delta, areas by severity, events sorted and labelled, zoom margin 24 h and custom, clip inclusive, summary and empty; tooltip with/without baseline and empty | none |
+| 7.8 | `ChartGrid.test.tsx`, `EventTimeline.test.tsx`, `chartData.test.ts` (latestDayTotals) | `Failed to resolve import "./ChartGrid"` / `"./EventTimeline"`, 3 latestDayTotals failures | 67 passed | four charts by name, empty on all four, chronological events, empty list | none |
+| 7.9 | `MeterDetailView.test.tsx`, `MeterDetailPage.test.tsx`, `router.test.tsx` (meters routes) | `Failed to resolve import "./MeterDetailPage"`, 2 route tests failed | 141 passed | KPIs, 4 charts, loading, not-found with link, error+Retry, section error keeps meter, parallel fetch (3 requests), run refreshes meter after new analysis, nav current on list and detail | `useRunAnalysis` extracted from DashboardPage (its 8 tests unchanged and green) |
+| 7.10 verify | n/a | n/a | tsc clean, 141 tests, build ok, go tests ok | n/a | done |
+
+### Work Unit Evidence (slice 7)
+| Evidence | Value |
+|---|---|
+| Focused test command | `cd frontend && npx vitest run --reporter=dot`: 22 files, 141 tests passed; `npx tsc --noEmit` clean; `npm run build` ok; `cd backend && go test ./... -count=1`: 9 packages ok |
+| Runtime harness | Real API binary (analysis run first, so M-109 is Critical) + Vite with `API_TARGET`; headless Chrome script in the scratchpad (not committed): UI login to `/`, Meters nav to `/meters` (12 rows), typing `109` gives `?q=109` and only M-109, status Critical gives `?status=Critical` with only M-109, `?sort=variation&order=desc` puts M-109 (+110.7%), M-104 (+47.4%), M-103 first, row click opens `/meters/M-109` with 4 charts (each with a dashed baseline line and text alternative), rise visible from 12 Sep, event marker "Unknown" at 2026-09-12 14:00 UTC, KPIs 17,526.0 kWh / +110.7% / 2,207.6 kWh vs baseline ~1,047.7 kWh / 1 finding; 390px: no horizontal overflow, charts stacked; `/meters/M-999` shows "Meter not found". Servers stopped. |
+| Rollback boundary | `frontend/src/{api/meters.ts,hooks/{useMeters,useMeterReadings,useRunAnalysis}.ts,lib/{chartData,chartTheme}.ts,components/{molecules/SearchFilterBar,organisms/{MetersTable,MetricChart,ChartGrid,EventTimeline}}.tsx,pages/{Meters,MeterDetail}/,app/{router,navigation}.tsx}`, recharts in `package.json` |
+
+### Deviations / notes (slice 7)
+- No anomaly windows yet: `MetricChart`/`ChartGrid` accept `areas`/`windows` (severity-tinted `ReferenceArea`, tested at the data-mapping level); slice 8 wires them to anomalies. Event markers are drawn on the consumption chart only.
+- Meter detail shows a KPI "Open findings" (API `anomaly_count`) rather than a link, because `/anomalies` does not exist until slice 8 (no dead links). Slice 8 task 8.9 adds the section.
+- Header numbers come from the API (`total_kwh`, `variation_pct`) plus "Latest 24 h" and "Baseline ~x kWh" derived from the last 24 readings (`latestDayTotals`), since the API has no daily baseline field.
+- Sort: URL uses `sort` and `order` (defaults omitted); the select combines them (`variation:desc`). Status sort offers only "most severe first".
+- `useRunAnalysis` replaces the inline slice 6 logic: it now reads the last analysis id via `fetchQuery` before POST and, when a newer analysis lands, invalidates `meters` and `meter`. The dashboard is only observed while a run is watched on the meter page.
+- `useDashboard` gained an `enabled` argument. Recharts 3.10.1 pinned; animations are disabled (respects reduced motion by construction). Chart colors come from tokens through `lib/chartTheme.ts` (`rgb(var(--token))`).
+- Tests mock only `ResponsiveContainer` (fixed size) so the real chart renders in jsdom; assertions use accessible names and text, not SVG geometry.
+- Size: see return summary; `size:exception` accepted for all PRs.
+
 ## Remaining
-Slices 7 - 9 (31 tasks) not started. Next: 7.1 onward (meters list and meter detail charts; add Recharts and the Meters nav item).
+Slices 8 - 9 (21 tasks) not started. Next: 8.1 onward (analysis job hook, progress panel, anomalies, investigation).

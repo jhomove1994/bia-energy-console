@@ -219,16 +219,16 @@ Spec coverage: web-console (Login and session guard, Dashboard, Loading/error/em
 Branch: `feat/07-meters-detail` (base slice 6 branch). Forecast: ~430 lines (edge). Task count: 10.
 Spec coverage: web-console (Meters list, Meter detail charts, Loading/error/empty states).
 
-- [ ] 7.1 Add `frontend/src/api/meters.ts` (list with `q`, `status`, `sort`, `order`; detail; readings; events) and extend `frontend/src/api/types.ts`.
-- [ ] 7.2 Add `frontend/src/hooks/{useMeters.ts,useMeterReadings.ts}` (query keys `['meters', params]`, `['meter', id]`, `['readings', id]`, `['events', id]`; parallel fetch).
-- [ ] 7.3 Molecule `frontend/src/components/molecules/SearchFilterBar.tsx` (search input, status select, sort select; props only).
-- [ ] 7.4 Organism `frontend/src/components/organisms/MetersTable.tsx` (id, total kWh, daily variation, status pill, row link to `/meters/:meterId`).
-- [ ] 7.5 `frontend/src/pages/Meters/{MetersPage.tsx,MetersView.tsx}`: filter state in the URL search string, loading/error/empty states; typing `109` leaves only M-109; filter `Critical` and sort by variation supported.
-- [ ] 7.6 RED: `frontend/src/lib/chartData.test.ts`: merges readings with baseline per metric, maps anomaly windows to `ReferenceArea` ranges, maps events to `ReferenceLine` markers, `window +- 24h` zoom helper.
-- [ ] 7.7 GREEN: `frontend/src/lib/chartData.ts` and organism `frontend/src/components/organisms/MetricChart.tsx` (Recharts `ComposedChart`, observed solid line, baseline dashed line, severity-tinted `ReferenceArea`, event `ReferenceLine`).
-- [ ] 7.8 Organisms `frontend/src/components/organisms/{ChartGrid.tsx,EventTimeline.tsx}` (four charts: kWh with baseline overlay, voltage, current, power factor).
-- [ ] 7.9 `frontend/src/pages/MeterDetail/{MeterDetailPage.tsx,MeterDetailView.tsx}`: header with status, 4 charts, events, not-found state for unknown meter, error with Retry, **Run AI Analysis** trigger reusing the slice 6 mutation.
-- [ ] 7.10 Verify: `npx vitest run --reporter=dot && npm run build`; harness: open M-109 detail, kWh rise visible from 2026-09-12 14:00 against baseline; unknown meter shows not-found.
+- [x] 7.1 Add `frontend/src/api/meters.ts` (list with `q`, `status`, `sort`, `order`; detail; readings; events) and extend `frontend/src/api/types.ts`.
+- [x] 7.2 Add `frontend/src/hooks/{useMeters.ts,useMeterReadings.ts}` (query keys `['meters', params]`, `['meter', id]`, `['readings', id]`, `['events', id]`; parallel fetch).
+- [x] 7.3 Molecule `frontend/src/components/molecules/SearchFilterBar.tsx` (search input, status select, sort select; props only).
+- [x] 7.4 Organism `frontend/src/components/organisms/MetersTable.tsx` (id, total kWh, daily variation, status pill, row link to `/meters/:meterId`).
+- [x] 7.5 `frontend/src/pages/Meters/{MetersPage.tsx,MetersView.tsx}`: filter state in the URL search string, loading/error/empty states; typing `109` leaves only M-109; filter `Critical` and sort by variation supported.
+- [x] 7.6 RED: `frontend/src/lib/chartData.test.ts`: merges readings with baseline per metric, maps anomaly windows to `ReferenceArea` ranges, maps events to `ReferenceLine` markers, `window +- 24h` zoom helper.
+- [x] 7.7 GREEN: `frontend/src/lib/chartData.ts` and organism `frontend/src/components/organisms/MetricChart.tsx` (Recharts `ComposedChart`, observed solid line, baseline dashed line, severity-tinted `ReferenceArea`, event `ReferenceLine`).
+- [x] 7.8 Organisms `frontend/src/components/organisms/{ChartGrid.tsx,EventTimeline.tsx}` (four charts: kWh with baseline overlay, voltage, current, power factor).
+- [x] 7.9 `frontend/src/pages/MeterDetail/{MeterDetailPage.tsx,MeterDetailView.tsx}`: header with status, 4 charts, events, not-found state for unknown meter, error with Retry, **Run AI Analysis** trigger reusing the slice 6 mutation.
+- [x] 7.10 Verify: `npx vitest run --reporter=dot && npm run build`; harness: open M-109 detail, kWh rise visible from 2026-09-12 14:00 against baseline; unknown meter shows not-found.
 
 ---
 
