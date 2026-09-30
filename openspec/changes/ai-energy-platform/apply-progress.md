@@ -1,6 +1,6 @@
 # Apply Progress: ai-energy-platform
 
-Mode: Strict TDD (runner `go test ./... -count=1`, cwd `backend`). Store: hybrid. Delivery: stacked-to-main, `size:exception` accepted for ALL PRs (user decision 2026-09-30; review is commit by commit).
+Mode: Strict TDD (backend runner `go test ./... -count=1`, cwd `backend`; frontend runner `npx vitest run --reporter=dot`, cwd `frontend`). Store: hybrid. Delivery: stacked-to-main, `size:exception` accepted for ALL PRs (user decision 2026-09-30; review is commit by commit).
 
 ## Batch 1: Slice 0 and Slice 1 (complete)
 
@@ -311,5 +311,70 @@ Commits (work units):
 - `started_at` is stamped by the store on the first `running` update (the port carries no timestamp), using an injectable clock defaulting to `time.Now`.
 - Size: 23 files, 2,717 additions and 6 deletions in 9 commits (about 1,500 in tests). `size:exception` accepted for all PRs.
 
+## Batch 7: Slice 6 (complete)
+
+Completed tasks: 6.1 - 6.13 (94/125 overall).
+
+### Slice 6 (branch `feat/06-web-shell-dashboard`, base `feat/05-analysis-jobs-api`)
+
+Commits (work units):
+| Hash | Message |
+|------|---------|
+| 84a106f | build(frontend): scaffold Vite, React, Tailwind and Vitest toolchain (6.1) |
+| 25be719 | feat(frontend): add display formatters and status token helpers (6.2, 6.3) |
+| f4671f2 | feat(frontend): add design tokens, Tailwind theme and atoms (6.4, 6.5) |
+| be322bb | feat(frontend): add KPI, badge, status and confidence molecules (6.6) |
+| 1c99a0f | feat(frontend): add API client with bearer auth, typed errors and 401 handling (6.7) |
+| 22df766 | feat(frontend): add auth session, API modules and route guard (6.8, 6.9) |
+| 8a21351 | feat(frontend): add AppShell organism with sidebar, topbar and skip link (6.10) |
+| fbbfa8b | feat(frontend): add login page with inline validation and error feedback (6.11) |
+| 0c2c351 | feat(frontend): add dashboard KPIs with empty, loading, error and run-analysis states (6.12) |
+| 4d7342f | feat(frontend): wire routes, app layout and session username (6.9, 6.12) |
+| 654eb7c | style(frontend): mute empty KPI placeholders and size the confidence figure |
+
+### Design system (ui-ux-pro-max, one coherent system)
+Queries run: `--design-system` for "energy management saas dashboard" (returned a dark glassmorphism/Fira direction) and for "energy utilities dashboard data-dense" with dials density 8, motion 2, variance 3 (returned Minimalism and Swiss style, navy/grey corporate, amber accent), plus `--domain typography|chart|ux` and `--stack react`.
+Decision: keep the design section 6.5 palette (it matches the second result: light Swiss-style data console, navy chrome, restrained amber) and harden it for accessibility. The dark glassmorphism suggestion was rejected because it hurts dense-table legibility and contrast.
+- Surfaces: canvas `#F6F8FB`, surface `#FFFFFF`, border `#E4E9F0`, text `#0F172A` (16.8:1), muted `#5B6B80` (5.1:1 on canvas; design's `#64748B` measured 4.47:1, so darkened).
+- Navigation: sidebar `#0F1B2D`, hover `#16263D`, text `#CBD5E1` (11.6:1), active item has an amber inset bar.
+- Brand: primary teal `#0EA5A4` for series, meters and decoration only (3.0:1 on white, not for text); `--primary-strong` `#0F766E` for buttons, links, focus ring (5.5:1 with white); accent amber `#F59E0B` with `#0F172A` text (8.3:1) for Run AI Analysis.
+- Severity/type/status share a base color plus an "-ink" shade for text on a 10% tint (all 4.6:1 or better): red `#DC2626`/`#B91C1C`, amber `#F59E0B`/`#B45309`, slate `#64748B`/`#475569`, violet `#7C3AED`/`#6D28D9`, blue `#2563EB`/`#1D4ED8`, green `#10B981`/`#047857`. Badges always carry text (and a dot for severity/status), never color alone.
+- Typography: Inter Variable, self-hosted via `@fontsource-variable/inter` (no CDN, works offline in Docker); `tabular-nums` for every figure (`.tabular`); KPI figure 30px semibold, label 12px uppercase tracking-wide, body 14px.
+- Shape and motion: radius 12px, card shadow `0 1px 2px rgb(15 23 42 / .06)`, 150ms ease `cubic-bezier(.2,0,0,1)`, `prefers-reduced-motion` zeroes durations and disables spin/pulse; visible 2px focus ring, skip link, `role=alert` for errors, `role=meter/progressbar` semantics.
+- Tokens live in `src/styles/tokens.css` as RGB channel triplets (hex noted beside each) and are mapped in `tailwind.config.ts` so Tailwind opacity modifiers work; no raw hex inside components.
+
+### TDD Cycle Evidence (slice 6)
+| Task | Test file | RED (observed) | GREEN | TRIANGULATE | REFACTOR |
+|------|-----------|----------------|-------|-------------|----------|
+| 6.2/6.3 | `lib/format.test.ts`, `lib/status.test.ts` | `Failed to resolve import "./format"` / `"./status"` (2 files failed, no tests) | 12 passed after implementation; first run had 2 failures (`Sept` vs `Sep` from en-GB ICU) fixed in the code by composing the month from en-US | thousands and padding, plus/minus/zero signs, ratios 0.914 and 0.75, dates and missing values, every enum value | none |
+| 6.5/6.6 | `components/molecules/molecules.test.tsx` | `Failed to resolve import "./ConfidenceMeter"` | 23 total passed | KPI label/value/caption and group role, 3 severities, type, 3 statuses, meter with value and null | none |
+| 6.7 | `api/client.test.ts` | `Failed to resolve import "./client"` | 9 passed | bearer present/absent, JSON body, 204, error body to ApiError, non-JSON error body, network failure, 401 clears token and calls handler, 401 with opt-out leaves the session | none |
+| 6.8/6.9 | `hooks/useAuth.test.tsx`, `app/AuthGuard.test.tsx` | `Failed to resolve import "../app/providers"` / `"./AuthGuard"` | 41 total passed | signed out/in at start, login stores token and posts credentials, wrong credentials keep signed out, logout, 401 signs out, guard redirects root and deep links, guard lets a token through | removed a stray re-export in `api/types.ts` |
+| 6.10 | `components/organisms/AppShell.test.tsx` | `Failed to resolve import "./AppShell"` | passed | content and user, aria-current on the active route, logout callback, skip link and main landmark | none |
+| 6.11 | `pages/Login/LoginView.test.tsx`, `LoginPage.test.tsx` | `Failed to resolve import "./LoginView"` / `"./LoginPage"` | 54 total passed | submit values, empty-field inline errors without submit, announced error, disabled while submitting, hint; page: success lands on dashboard, wrong credentials stay with alert, network error message, already signed in | none |
+| 6.12 (+6.9 wiring) | `pages/Dashboard/DashboardPage.test.tsx`, `app/router.test.tsx`, `useAuth.test.tsx` (username cases) | `Failed to resolve import "./DashboardPage"` / `"./router"`; 2 username assertions failed (`toHaveTextContent`) | 68 passed | KPIs after analysis (12, 12,345.7 kWh, 4, 2, 91%, date), summary text, pre-analysis nulls with empty state and "across 12 meters", loading status, error then Retry recovers, run refreshes KPIs, trigger disabled in flight, start failure message; routes: anonymous to login, login to dashboard in shell, sign out, 401 mid-session to login, unknown path to dashboard | dashboard test helpers simplified (`mockApi` with Error entries); router future flags adopted to silence warnings; `act` around the in-flight release |
+| 6.13 verify | n/a | n/a | tsc clean, 68 tests, build ok, go tests ok | n/a | done |
+
+Test summary: 68 tests in 11 files; 0 stderr warnings after cleanup. No CSS-class assertions (behavioral queries by role and text only).
+
+### Work Unit Evidence (slice 6)
+| Evidence | Value |
+|---|---|
+| Focused test command | `cd frontend && npx vitest run --reporter=dot`: 11 files, 68 tests passed; `npx tsc --noEmit` clean; `npm run build`: JS 225.09 kB (71.57 kB gzip), CSS 22.72 kB (5.40 kB gzip), Inter woff2 subsets; `cd backend && go test ./... -count=1`: 9 packages ok |
+| Runtime harness | Built API binary with `DATA_DIR=../data`, temp DB, `PORT=18085`, `ANALYSIS_STAGE_DELAY_MS=300`, demo user env; `API_TARGET=http://localhost:18085 npx vite --port 15173`. curl: `/` 200 index.html, `/src/main.tsx` 200, `/api/health` through the proxy `{"status":"ok"}`, login through the proxy returned a token, dashboard without a token 401, with token pre-analysis `meters_count 12, total_kwh 155250.85`, nulls. Headless Chrome (CDP script in the scratchpad, no repo files) rendered login, dashboard pre-analysis with empty state, Run AI Analysis click showing the "Analysis started" note, then post-analysis KPIs 12 / 155,250.9 kWh / 4 / 2 / 91% and banner `4 anomalies detected · 2 require priority attention`; mobile (390px) stacks cleanly. Both servers stopped. |
+| Rollback boundary | `frontend/` (whole directory); no backend files touched |
+
+### Deviations / notes (slice 6)
+- Recharts is not installed in this slice (no chart yet); slice 7 adds it. `@fontsource-variable/inter` was added (self-hosted font; not in the task list). `@types/node` added as a dev dependency for `process.env` in `vite.config.ts`.
+- `vite.config.ts` reads `API_TARGET` (default `http://localhost:8080`) so the proxy target can be overridden without editing config.
+- Test type/globals: Vitest `globals: true` with `@testing-library/jest-dom/vitest` in `src/test/setup.ts`, which also clears localStorage after each test.
+- Routing uses `useRoutes` inside `BrowserRouter` (app) and `MemoryRouter` (tests) instead of `createBrowserRouter`: the data-router `Request` path fails under jsdom (`Expected signal to be an instance of AbortSignal`). `routes` is exported for reuse; `routerFuture` opts into the v7 flags.
+- Token is stored in localStorage (`energy.token`), as tasks 6.9 specify, plus `energy.username` for the topbar; a 401 (except on login) clears both and signs out through `AuthProvider`.
+- `AppShell` renders `NavLink`s (navigation markup) and stays hook-free; the nav list comes from `app/navigation.tsx` and only has Dashboard until slices 7 and 8 add their routes (no dead links).
+- Extra atoms beyond the task list: `Icon` (inline SVG set), `EmptyState`, `ErrorState`. `lib/tone.ts` holds the static Tailwind class maps per token.
+- Temporary run trigger (replaced by `useAnalysisJob` in slice 8): `DashboardPage` starts the analysis, refetches the dashboard once, and polls it every second for up to 30 s until a newer completed analysis appears; the trigger is not disabled while waiting (the server is single-flight, a second click returns the same id).
+- Design token `--muted` darkened from `#64748B` to `#5B6B80` for AA contrast; teal `#0EA5A4` is reserved for non-text use with `#0F766E` for buttons/links (contrast). Recorded above.
+- Size: 62 files changed, 2,447 additions (lockfile excluded), about 900 of them tests, in 11 commits. `size:exception` accepted for all PRs.
+
 ## Remaining
-Slices 6 - 9 (44 tasks) not started. Next: 6.1 onward (web shell, login, dashboard).
+Slices 7 - 9 (31 tasks) not started. Next: 7.1 onward (meters list and meter detail charts; add Recharts and the Meters nav item).

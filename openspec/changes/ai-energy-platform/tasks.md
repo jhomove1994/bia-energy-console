@@ -198,19 +198,19 @@ Spec coverage: ai-analysis (all except Template explainer body), meter-catalog (
 Branch: `feat/06-web-shell-dashboard` (base slice 5 branch). Forecast: ~450 lines (edge). Task count: 13.
 Spec coverage: web-console (Login and session guard, Dashboard, Loading/error/empty states). Style: SaaS energy-management console per design section 6.5; atomic design, container (`*Page`) / presentational (`*View`).
 
-- [ ] 6.1 Scaffold `frontend/{package.json,vite.config.ts,tsconfig.json,index.html,tailwind.config.ts,postcss.config.js}` (Vite 5, React 18.3, TS strict, React Router 6, TanStack Query 5, Recharts 2, Tailwind 3.4, Vitest + Testing Library) and `frontend/src/main.tsx`; `server.proxy['/api'] -> http://localhost:8080`.
-- [ ] 6.2 RED: `frontend/src/lib/format.test.ts` (kWh with thousands separator and 1 decimal, percent with sign, date formats, `tabular-nums` helper not needed) and `frontend/src/lib/status.test.ts` (severity/type/status to token name). Confirm vitest runs and fails.
-- [ ] 6.3 GREEN: `frontend/src/lib/{format.ts,status.ts}`.
-- [ ] 6.4 Add `frontend/src/styles/{tokens.css,index.css}` with all design section 6.5 tokens (navy sidebar, teal primary, amber accent, severity/type/status colors, Inter font, 12px radius) and map them in `tailwind.config.ts`.
-- [ ] 6.5 Atoms in `frontend/src/components/atoms/{Button,Card,Badge,Input,Select,Spinner,ProgressBar,Skeleton}.tsx` (props only, no hooks).
-- [ ] 6.6 Molecules in `frontend/src/components/molecules/{KpiCard,SeverityBadge,TypeBadge,StatusPill,ConfidenceMeter}.tsx`.
-- [ ] 6.7 RED then GREEN: `frontend/src/api/client.test.ts` and `frontend/src/api/client.ts`: sends `Authorization: Bearer`, maps error bodies to `ApiError`, on 401 clears the token and calls the unauthorized handler, network failure maps to `ApiError` with code `network`.
-- [ ] 6.8 Add `frontend/src/api/{types.ts,auth.ts,dashboard.ts,analysis.ts}` (DTO types use the spec field names; `analysis.ts` exposes `startAnalysis` only in this slice).
-- [ ] 6.9 Add `frontend/src/hooks/{useAuth.ts,useDashboard.ts}`, `frontend/src/app/{providers.tsx,AuthGuard.tsx,router.tsx}` (guard redirects to `/login`; token in localStorage; logout).
-- [ ] 6.10 Organisms `frontend/src/components/organisms/AppShell.tsx` (Sidebar, Topbar with logout).
-- [ ] 6.11 `frontend/src/pages/Login/{LoginPage.tsx,LoginView.tsx}` (demo credentials hint, error message on wrong credentials, stays on login).
-- [ ] 6.12 `frontend/src/pages/Dashboard/{DashboardPage.tsx,DashboardView.tsx}`: KPIs (meters, total kWh, anomalies, high priority, aggregate confidence, last analysis), summary text, empty state inviting analysis when none completed, loading skeleton, error with Retry, **Run AI Analysis** trigger (container passes `onRun` calling `startAnalysis`; progress UI arrives in slice 8).
-- [ ] 6.13 Verify: `cd frontend && npx vitest run --reporter=dot && npm run build`; harness: API + `npm run dev`, login with `admin/admin123`, dashboard shows KPIs.
+- [x] 6.1 (Recharts deferred to slice 7, where charts land) Scaffold `frontend/{package.json,vite.config.ts,tsconfig.json,index.html,tailwind.config.ts,postcss.config.js}` (Vite 5, React 18.3, TS strict, React Router 6, TanStack Query 5, Recharts 2, Tailwind 3.4, Vitest + Testing Library) and `frontend/src/main.tsx`; `server.proxy['/api'] -> http://localhost:8080`.
+- [x] 6.2 RED: `frontend/src/lib/format.test.ts` (kWh with thousands separator and 1 decimal, percent with sign, date formats, `tabular-nums` helper not needed) and `frontend/src/lib/status.test.ts` (severity/type/status to token name). Confirm vitest runs and fails.
+- [x] 6.3 GREEN: `frontend/src/lib/{format.ts,status.ts}`.
+- [x] 6.4 Add `frontend/src/styles/{tokens.css,index.css}` with all design section 6.5 tokens (navy sidebar, teal primary, amber accent, severity/type/status colors, Inter font, 12px radius) and map them in `tailwind.config.ts`.
+- [x] 6.5 Atoms in `frontend/src/components/atoms/{Button,Card,Badge,Input,Select,Spinner,ProgressBar,Skeleton}.tsx` (props only, no hooks).
+- [x] 6.6 Molecules in `frontend/src/components/molecules/{KpiCard,SeverityBadge,TypeBadge,StatusPill,ConfidenceMeter}.tsx`.
+- [x] 6.7 RED then GREEN: `frontend/src/api/client.test.ts` and `frontend/src/api/client.ts`: sends `Authorization: Bearer`, maps error bodies to `ApiError`, on 401 clears the token and calls the unauthorized handler, network failure maps to `ApiError` with code `network`.
+- [x] 6.8 Add `frontend/src/api/{types.ts,auth.ts,dashboard.ts,analysis.ts}` (DTO types use the spec field names; `analysis.ts` exposes `startAnalysis` only in this slice).
+- [x] 6.9 Add `frontend/src/hooks/{useAuth.ts,useDashboard.ts}`, `frontend/src/app/{providers.tsx,AuthGuard.tsx,router.tsx}` (guard redirects to `/login`; token in localStorage; logout).
+- [x] 6.10 Organisms `frontend/src/components/organisms/AppShell.tsx` (Sidebar, Topbar with logout).
+- [x] 6.11 `frontend/src/pages/Login/{LoginPage.tsx,LoginView.tsx}` (demo credentials hint, error message on wrong credentials, stays on login).
+- [x] 6.12 `frontend/src/pages/Dashboard/{DashboardPage.tsx,DashboardView.tsx}`: KPIs (meters, total kWh, anomalies, high priority, aggregate confidence, last analysis), summary text, empty state inviting analysis when none completed, loading skeleton, error with Retry, **Run AI Analysis** trigger (container passes `onRun` calling `startAnalysis`; progress UI arrives in slice 8).
+- [x] 6.13 Verify: `cd frontend && npx vitest run --reporter=dot && npm run build`; harness: API + `npm run dev`, login with `admin/admin123`, dashboard shows KPIs.
 
 ---
 
