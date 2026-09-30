@@ -36,6 +36,42 @@ type EventRepository interface {
 	ByMeter(ctx context.Context, meterID string) ([]domain.Event, error)
 }
 
+// AnalysisRepository persists analysis runs and their anomalies.
+type AnalysisRepository interface {
+	Create(ctx context.Context, a domain.Analysis) error
+	UpdateProgress(ctx context.Context, id string, st domain.AnalysisStatus, stage domain.Stage, idx, progress int) error
+	// Complete inserts the anomalies and marks the analysis done with progress
+	// 100 in one transaction; on failure nothing is visible.
+	Complete(ctx context.Context, id string, finished time.Time, s domain.Summary, as []domain.Anomaly) error
+	Fail(ctx context.Context, id string, finished time.Time, msg string) error
+	// Get returns ErrNotFound for an unknown id.
+	Get(ctx context.Context, id string) (domain.Analysis, error)
+	// Latest is the most recently created analysis in any state, or nil.
+	Latest(ctx context.Context) (*domain.Analysis, error)
+	// LatestDone is the most recent done analysis, or nil.
+	LatestDone(ctx context.Context) (*domain.Analysis, error)
+	// FailInterrupted marks pending and running analyses failed and returns how many.
+	FailInterrupted(ctx context.Context, finished time.Time) (int, error)
+}
+
+// AnomalyFilter narrows an anomaly list; empty fields match everything.
+type AnomalyFilter struct {
+	MeterID  string
+	Type     domain.AnomalyType
+	Severity domain.Severity
+}
+
+// AnomalyRepository reads persisted anomalies.
+type AnomalyRepository interface {
+	// List returns the anomalies of one analysis ordered by rank.
+	List(ctx context.Context, analysisID string, f AnomalyFilter) ([]domain.Anomaly, error)
+	// Get returns one anomaly with evidence and related event; ErrNotFound if unknown.
+	Get(ctx context.Context, id string) (domain.Anomaly, error)
+}
+
+// IDGenerator produces unique identifiers.
+type IDGenerator interface{ NewID() string }
+
 // Clock provides the current time so services stay deterministic in tests.
 type Clock interface {
 	Now() time.Time
