@@ -62,6 +62,63 @@ type ListQuery struct {
 	Order  string
 }
 
+// DeriveStatuses turns the anomalies of one analysis into per-meter findings.
+// Critical means a HIGH REAL_ANOMALY; Alert means any DATA_QUALITY or
+// EXPLAINABLE_ANOMALY, or a REAL_ANOMALY that is not HIGH; a meter with only
+// FALSE_POSITIVE anomalies stays OK. Meters without anomalies are absent.
+func DeriveStatuses(as []domain.Anomaly) map[string]MeterFinding {
+	out := map[string]MeterFinding{}
+	for _, a := range as {
+		f := out[a.MeterID]
+		f.AnomalyCount++
+		st := anomalyStatus(a)
+		if statusRank(st) > statusRank(f.Status) || f.Status == "" {
+			f.Status = st
+		}
+		out[a.MeterID] = f
+	}
+	return out
+}
+
+func anomalyStatus(a domain.Anomaly) MeterStatus {
+	switch {
+	case a.Type == domain.TypeReal && a.Severity == domain.SeverityHigh:
+		return StatusCritical
+	case a.Type == domain.TypeFalsePos:
+		return StatusOK
+	default:
+		return StatusAlert
+	}
+}
+
+// AnalysisStatuses is the MeterStatusSource backed by the latest done analysis.
+type AnalysisStatuses struct {
+	latest    LatestDoneSource
+	anomalies AnomalyRepository
+}
+
+// NewAnalysisStatuses derives meter statuses from the latest done analysis.
+func NewAnalysisStatuses(latest LatestDoneSource, anomalies AnomalyRepository) *AnalysisStatuses {
+	return &AnalysisStatuses{latest: latest, anomalies: anomalies}
+}
+
+// Statuses implements MeterStatusSource. Without a done analysis every meter is
+// OK, so the map is empty.
+func (s *AnalysisStatuses) Statuses(ctx context.Context) (map[string]MeterFinding, error) {
+	a, err := s.latest.LatestDone(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if a == nil {
+		return map[string]MeterFinding{}, nil
+	}
+	as, err := s.anomalies.List(ctx, a.ID, AnomalyFilter{})
+	if err != nil {
+		return nil, err
+	}
+	return DeriveStatuses(as), nil
+}
+
 // MeterService serves the meter catalog: list, detail, readings and events.
 type MeterService struct {
 	meters   MeterRepository

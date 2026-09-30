@@ -67,3 +67,54 @@ func TestDashboardUsesLatestDoneAnalysis(t *testing.T) {
 }
 
 func ptr(v float64) *float64 { return &v }
+
+func TestAggregateConfidenceIsTheMean(t *testing.T) {
+	as := []domain.Anomaly{
+		{Type: domain.TypeReal, Severity: domain.SeverityHigh, Confidence: 0.9},
+		{Type: domain.TypeDataQuality, Severity: domain.SeverityHigh, Confidence: 0.8},
+		{Type: domain.TypeExplainable, Severity: domain.SeverityMedium, Confidence: 0.7},
+		{Type: domain.TypeFalsePos, Severity: domain.SeverityLow, Confidence: 0.6},
+	}
+	sum := Summarize(as, 12)
+	store := demoStore()
+	a := &domain.Analysis{ID: "an-1", Status: domain.AnalysisDone, Summary: &sum}
+	d, err := NewDashboardService(store, store, staticLatest{a}).Summary(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if d.AggregateConfidence == nil || *d.AggregateConfidence != 0.75 {
+		t.Fatalf("aggregate = %v, want 0.75", d.AggregateConfidence)
+	}
+	if d.AnomaliesCount != 4 || d.HighPriorityCount != 2 || d.SummaryText == nil || *d.SummaryText != "4 anomalies detected · 2 require priority attention" {
+		t.Fatalf("dashboard = %+v", d)
+	}
+}
+
+func TestFailedNewerAnalysisDoesNotReplaceDoneFigures(t *testing.T) {
+	ctx := context.Background()
+	repo := newFakeAnalyses()
+	first := domain.Summary{Total: 4, PriorityAttention: 2, AvgConfidence: 0.75, Text: "4 anomalies detected · 2 require priority attention"}
+	_ = repo.Create(ctx, domain.Analysis{ID: "A", Status: domain.AnalysisPending})
+	_ = repo.Complete(ctx, "A", time.Now(), first, nil)
+	_ = repo.Create(ctx, domain.Analysis{ID: "B", Status: domain.AnalysisPending})
+	_ = repo.Fail(ctx, "B", time.Now(), "boom")
+
+	store := demoStore()
+	svc := NewDashboardService(store, store, repo)
+	d, err := svc.Summary(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if d.LastAnalysis == nil || d.LastAnalysis.ID != "A" || d.AnomaliesCount != 4 || d.HighPriorityCount != 2 {
+		t.Fatalf("figures must come from A: %+v", d)
+	}
+
+	// A newer completed analysis replaces it.
+	second := domain.Summary{Total: 1, PriorityAttention: 1, AvgConfidence: 0.9, Text: "1 anomaly detected · 1 requires priority attention"}
+	_ = repo.Create(ctx, domain.Analysis{ID: "C", Status: domain.AnalysisPending})
+	_ = repo.Complete(ctx, "C", time.Now(), second, nil)
+	d, _ = svc.Summary(ctx)
+	if d.LastAnalysis == nil || d.LastAnalysis.ID != "C" || d.AnomaliesCount != 1 || *d.AggregateConfidence != 0.9 {
+		t.Fatalf("figures must come from C: %+v", d)
+	}
+}
