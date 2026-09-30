@@ -3,6 +3,8 @@ package httpapi
 import (
 	"log/slog"
 	"net/http"
+
+	"energy/internal/app"
 )
 
 // Deps are the collaborators the HTTP adapter needs.
@@ -11,6 +13,7 @@ type Deps struct {
 	DemoPassword string
 	Tokens       *Tokens
 	Log          *slog.Logger
+	Meters       *app.MeterService
 }
 
 type server struct {
@@ -23,6 +26,12 @@ func NewRouter(d Deps) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", handleHealth)
 	mux.HandleFunc("POST /api/auth/login", s.handleLogin)
+	if d.Meters != nil {
+		mux.HandleFunc("GET /api/meters", s.handleListMeters)
+		mux.HandleFunc("GET /api/meters/{id}", s.handleMeterDetail)
+		mux.HandleFunc("GET /api/meters/{id}/readings", s.handleMeterReadings)
+		mux.HandleFunc("GET /api/meters/{id}/events", s.handleMeterEvents)
+	}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, codeNotFound, "route not found")
 	})
