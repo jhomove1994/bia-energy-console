@@ -1,0 +1,47 @@
+import { formatConfidence, formatDate, formatDateTime, formatKwh, formatSignedPercent } from './format'
+
+describe('formatKwh', () => {
+  it('groups thousands and keeps one decimal', () => {
+    expect(formatKwh(12345.678)).toBe('12,345.7 kWh')
+  })
+
+  it('pads a whole number to one decimal', () => {
+    expect(formatKwh(42)).toBe('42.0 kWh')
+    expect(formatKwh(0)).toBe('0.0 kWh')
+  })
+})
+
+describe('formatSignedPercent', () => {
+  it('shows an explicit plus for increases', () => {
+    expect(formatSignedPercent(110.46)).toBe('+110.5%')
+  })
+
+  it('shows a minus for decreases and no sign for zero', () => {
+    expect(formatSignedPercent(-3.04)).toBe('-3.0%')
+    expect(formatSignedPercent(0)).toBe('0.0%')
+  })
+})
+
+describe('formatConfidence', () => {
+  it('renders a 0..1 ratio as a whole percent', () => {
+    expect(formatConfidence(0.914)).toBe('91%')
+    expect(formatConfidence(0.75)).toBe('75%')
+  })
+})
+
+describe('date formats', () => {
+  const iso = '2026-09-12T14:05:00Z'
+
+  it('formats a date in UTC', () => {
+    expect(formatDate(iso)).toBe('12 Sep 2026')
+  })
+
+  it('formats a date and time in UTC', () => {
+    expect(formatDateTime(iso)).toBe('12 Sep 2026, 14:05 UTC')
+  })
+
+  it('renders a placeholder for a missing value', () => {
+    expect(formatDate(null)).toBe('—')
+    expect(formatDateTime(undefined)).toBe('—')
+  })
+})

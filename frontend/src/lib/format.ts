@@ -1,0 +1,35 @@
+const PLACEHOLDER = '—'
+
+const kwhFormat = new Intl.NumberFormat('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+const percentFormat = new Intl.NumberFormat('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+// Months come from en-US ("Sep"); en-GB abbreviates September as "Sept" in recent ICU builds.
+const monthFormat = new Intl.DateTimeFormat('en-US', { month: 'short', timeZone: 'UTC' })
+const timeFormat = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'UTC' })
+
+const dateOf = (date: Date): string => `${date.getUTCDate()} ${monthFormat.format(date)} ${date.getUTCFullYear()}`
+
+export function formatKwh(value: number): string {
+  return `${kwhFormat.format(value)} kWh`
+}
+
+/** Formats a percentage already expressed in percent points (110.5 -> "+110.5%"). */
+export function formatSignedPercent(value: number): string {
+  const rounded = Math.round(value * 10) / 10
+  const sign = rounded > 0 ? '+' : ''
+  return `${sign}${percentFormat.format(rounded)}%`
+}
+
+/** Formats a 0..1 confidence ratio as a whole percent. */
+export function formatConfidence(ratio: number): string {
+  return `${Math.round(ratio * 100)}%`
+}
+
+export function formatDate(iso: string | null | undefined): string {
+  return iso ? dateOf(new Date(iso)) : PLACEHOLDER
+}
+
+export function formatDateTime(iso: string | null | undefined): string {
+  if (!iso) return PLACEHOLDER
+  const date = new Date(iso)
+  return `${dateOf(date)}, ${timeFormat.format(date)} UTC`
+}
