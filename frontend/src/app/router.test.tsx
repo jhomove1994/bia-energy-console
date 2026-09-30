@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import type { DashboardSummary } from '../api/types'
+import { demoAnomalyList } from '../test/fixtures'
 import { createTestQueryClient, jsonResponse } from '../test/utils'
 import { AppProviders } from './providers'
 import { AppRoutes, routerFuture } from './router'
@@ -54,6 +55,8 @@ beforeEach(() => {
     if (key === 'GET /api/meters') {
       return jsonResponse(200, { items: [{ meter_id: 'M-109', status: 'Critical', last_reading_at: null, total_kwh: 10, variation_pct: 110 }] })
     }
+    if (key === 'GET /api/ai/analysis/latest') return jsonResponse(204)
+    if (key === 'GET /api/anomalies') return jsonResponse(200, demoAnomalyList())
     throw new Error(`unexpected request ${key}`)
   })
 })
@@ -141,5 +144,20 @@ describe('meters routes', () => {
     expect(await screen.findByText('Meter not found')).toBeInTheDocument()
     // The shell keeps the Meters entry current on a detail page.
     expect(screen.getByRole('link', { name: 'Meters' })).toHaveAttribute('aria-current', 'page')
+  })
+})
+
+describe('anomalies routes', () => {
+  it('opens the anomalies list from the sidebar and marks it as current', async () => {
+    window.localStorage.setItem('energy.token', 'tok')
+    renderAt('/')
+    await screen.findByText('4 anomalies detected · 2 require priority attention')
+
+    await userEvent.click(screen.getByRole('link', { name: 'AI Anomalies' }))
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'AI Anomalies' })).toBeInTheDocument()
+    expect(currentPath().textContent).toBe('/anomalies')
+    expect(screen.getByRole('link', { name: 'AI Anomalies' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Dashboard' })).not.toHaveAttribute('aria-current')
   })
 })
