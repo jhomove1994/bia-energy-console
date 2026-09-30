@@ -86,8 +86,9 @@ func newFixture(t *testing.T) *fixture {
 	var logs bytes.Buffer
 	h := NewRouter(Deps{
 		DemoUser: testUser, DemoPassword: testPass, Tokens: tokens,
-		Log:    slog.New(slog.NewTextHandler(&logs, nil)),
-		Meters: app.NewMeterService(meters, readings, evs, app.NoAnalysis{}, engine.DefaultConfig()),
+		Log:       slog.New(slog.NewTextHandler(&logs, nil)),
+		Meters:    app.NewMeterService(meters, readings, evs, app.NoAnalysis{}, engine.DefaultConfig()),
+		Dashboard: app.NewDashboardService(meters, readings, app.NoLatestDone{}),
 	})
 	token, _ := tokens.Issue(testUser)
 	return &fixture{Handler: h, Token: token, Logs: &logs}

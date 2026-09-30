@@ -14,6 +14,7 @@ type Deps struct {
 	Tokens       *Tokens
 	Log          *slog.Logger
 	Meters       *app.MeterService
+	Dashboard    *app.DashboardService
 }
 
 type server struct {
@@ -31,6 +32,9 @@ func NewRouter(d Deps) http.Handler {
 		mux.HandleFunc("GET /api/meters/{id}", s.handleMeterDetail)
 		mux.HandleFunc("GET /api/meters/{id}/readings", s.handleMeterReadings)
 		mux.HandleFunc("GET /api/meters/{id}/events", s.handleMeterEvents)
+	}
+	if d.Dashboard != nil {
+		mux.HandleFunc("GET /api/dashboard/summary", s.handleDashboardSummary)
 	}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, codeNotFound, "route not found")

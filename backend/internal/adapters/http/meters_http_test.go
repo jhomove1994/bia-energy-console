@@ -221,3 +221,37 @@ func TestMeterRoutesRequireAuth(t *testing.T) {
 		}
 	}
 }
+
+func TestDashboardSummaryBeforeAnalysis(t *testing.T) {
+	f := newFixture(t)
+	rec := f.get(t, "/api/dashboard/summary")
+	if rec.Code != 200 {
+		t.Fatalf("status = %d body %s", rec.Code, rec.Body)
+	}
+	raw := decode[map[string]any](t, rec)
+	for _, nullable := range []string{"aggregate_confidence", "last_analysis", "summary_text"} {
+		v, present := raw[nullable]
+		if !present || v != nil {
+			t.Fatalf("%s = %v (present=%v), want present and null", nullable, v, present)
+		}
+	}
+	got := decode[struct {
+		MetersCount       int     `json:"meters_count"`
+		TotalKWh          float64 `json:"total_kwh"`
+		AnomaliesCount    int     `json:"anomalies_count"`
+		HighPriorityCount int     `json:"high_priority_count"`
+	}](t, rec)
+	// 12 meters x 14 days, plus the extra kWh of M-109's elevated last day.
+	perDay := 276.0 // sum over 24 hours of 10 + hour%4
+	want := 12*14*perDay + 1.09*perDay
+	if got.MetersCount != 12 || math.Abs(got.TotalKWh-want) > 1e-6 || got.AnomaliesCount != 0 || got.HighPriorityCount != 0 {
+		t.Fatalf("dashboard = %+v, want total %v", got, want)
+	}
+}
+
+func TestDashboardRequiresAuth(t *testing.T) {
+	f := newFixture(t)
+	if rec := do(f.Handler, "GET", "/api/dashboard/summary", "", ""); rec.Code != 401 {
+		t.Fatalf("status = %d, want 401", rec.Code)
+	}
+}
