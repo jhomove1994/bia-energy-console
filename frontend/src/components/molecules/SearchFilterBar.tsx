@@ -31,7 +31,7 @@ export const sortOptions: SelectOption[] = [
 
 export function SearchFilterBar({ query, status, sort, onQueryChange, onStatusChange, onSortChange }: SearchFilterBarProps) {
   return (
-    <div role="search" className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_11rem_15rem]">
+    <div role="search" className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem_17rem]">
       <Input
         id="meter-search"
         type="search"

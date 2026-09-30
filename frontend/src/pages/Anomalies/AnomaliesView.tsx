@@ -85,8 +85,8 @@ export function AnomaliesView({ state, list, filters, errorMessage, onTypeChange
 
       {state === 'ready' && !noAnalysisYet && (
         <div role="group" aria-label="Filtros" className="flex flex-wrap items-end gap-3">
-          <Select id="anomaly-type" label="Tipo" className="w-44" options={typeOptions} value={filters.type} onChange={(e) => onTypeChange(e.target.value)} />
-          <Select id="anomaly-severity" label="Severidad" className="w-44" options={severityOptions} value={filters.severity} onChange={(e) => onSeverityChange(e.target.value)} />
+          <Select id="anomaly-type" label="Tipo" className="w-56" options={typeOptions} value={filters.type} onChange={(e) => onTypeChange(e.target.value)} />
+          <Select id="anomaly-severity" label="Severidad" className="w-56" options={severityOptions} value={filters.severity} onChange={(e) => onSeverityChange(e.target.value)} />
           {filters.meterId && (
             <span className="inline-flex h-10 items-center rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary-strong">Medidor {filters.meterId}</span>
           )}
