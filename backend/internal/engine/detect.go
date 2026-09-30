@@ -105,6 +105,24 @@ type hourFlag struct {
 	absDev float64
 }
 
+// hourFlagged is the hourly gate: an hour is flagged when both its relative
+// deviation from the hour-of-day median and its robust z-score reach their
+// thresholds. dev is the signed relative deviation. Hours without a usable
+// baseline are never flagged.
+func hourFlagged(r domain.Reading, b Baseline, cfg Config) (dev float64, flagged bool) {
+	h := r.TS.UTC().Hour()
+	med, sigma := b.KWh[h].Median, b.SigmaKWh[h]
+	if med <= 0 || sigma <= 0 {
+		return 0, false
+	}
+	delta := r.KWh - med
+	dev = delta / med
+	if math.Abs(dev) < cfg.HourlyDevPct || math.Abs(delta/sigma) < cfg.RobustZ {
+		return 0, false
+	}
+	return dev, true
+}
+
 // DetectConsumption flags hours whose kWh departs from the hour-of-day
 // baseline, joins same-sign flags into episodes and classifies each episode as
 // a persistent shift or a spike. Everything else is discarded. series must be
@@ -126,14 +144,8 @@ func DetectConsumption(series []domain.Reading, b Baseline, cfg Config) []Signal
 		run = nil
 	}
 	for i, r := range series {
-		h := r.TS.UTC().Hour()
-		med, sigma := b.KWh[h].Median, b.SigmaKWh[h]
-		if med <= 0 || sigma <= 0 {
-			continue
-		}
-		delta := r.KWh - med
-		dev := delta / med
-		if math.Abs(dev) < cfg.HourlyDevPct || math.Abs(delta/sigma) < cfg.RobustZ {
+		dev, ok := hourFlagged(r, b, cfg)
+		if !ok {
 			continue
 		}
 		f := hourFlag{idx: i, ts: r.TS, sign: sign(dev), absDev: math.Abs(dev)}
