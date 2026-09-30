@@ -108,7 +108,7 @@ type Analysis struct {
 type Summary struct {
     Total, PriorityAttention, MetersAnalyzed int
     ByType map[AnomalyType]int; BySeverity map[Severity]int
-    AvgConfidence float64; Text string // "4 anomalies detected · 2 require priority attention"
+    AvgConfidence float64; Text string // "4 anomalías detectadas · 2 requieren atención prioritaria"
 }
 ```
 
@@ -336,7 +336,7 @@ Reason templates (one per type), for example REAL: "Consumption was {{effect}}% 
 **Summary (`app/summary.go`)**:
 - `Total` = count of all anomalies, including FALSE_POSITIVE.
 - `PriorityAttention` = count of `Severity==HIGH && Type ∈ {REAL, DATA_QUALITY}`.
-- `Text = fmt.Sprintf("%d anomalies detected · %d require priority attention", Total, PriorityAttention)`, using U+00B7. Singular forms apply for 1: "1 anomaly detected", "1 requires".
+- `Text = fmt.Sprintf("%d anomalías detectadas · %d requieren atención prioritaria", Total, PriorityAttention)`, using U+00B7. Singular forms apply for 1: "1 anomalía detectada", "1 requiere atención prioritaria". User-facing copy is Spanish (proposal decision 7, slice 10).
 
 **Meter status** (from the latest done analysis): Critical = any REAL HIGH. Alert = any DATA_QUALITY, EXPLAINABLE, or non-HIGH REAL. OK = none, or only FALSE_POSITIVE.
 
@@ -349,7 +349,7 @@ Reason templates (one per type), for example REAL: "Consumption was {{effect}}% 
 | **M-104** | episode +, 09-11 00:00 → end (≥ 96 h, persistent) → daily var +47%. Ratio stable, no pattern break (0.97/3.4%). | OPERATIONAL_CHANGE Δ 0 h, power 0.9, persistent → compatible. Not recovered. | EXPLAINABLE_ANOMALY, `LEVEL_SHIFT_UP` | 40·0.47 + 20 + 10 (ΔA +48% only) + 0 = **48.8 MEDIUM** | 0.5+0.113+0.15+0.033+0.05 = **0.846** | 2·0.846·0.6 → **33.8, rank 3** |
 | **M-106** | episode −, 09-08 00:00 → 11:00 (12 h, persistent) → daily var d8, pattern break d8 (0.54/63.7%). Current down about 75%. | SCHEDULED_OUTAGE Δ 0 h, power 1.0, decrease → compatible. Recovered at 12:00 (≥ 12 h in-gate). | FALSE_POSITIVE, `SUSTAINED_DECREASE` | about 36 (≤ 39 forced) **LOW** | 0.5+0.2+0.075+0.033+0.05 = **0.858** | 1·0.858·0.2 → **5.7, rank 4** |
 
-**Summary**: `4 anomalies detected · 2 require priority attention` (M-109 REAL HIGH, M-112 DQ HIGH).
+**Summary**: `4 anomalías detectadas · 2 requieren atención prioritaria` (M-109 REAL HIGH, M-112 DQ HIGH).
 
 **M-106 DQ guard**: current falls at 00:00 and rises at 12:00, which gives 2 jumps and 1 reversal (< 2), so no cluster. Intra-outage wobble (39↔61 A) stays below 50% under the symmetric denominator. **M-109 DQ guard**: 1 A jump and 1 PF jump, no V jump, so no oscillation. The ratio has a single sign, so it is stable and counts as corroboration.
 
@@ -481,7 +481,7 @@ Router: stdlib `http.ServeMux` with method patterns. Middleware chain: `recover 
 // AnalysisDTO
 { "id":"…","status":"running","stage":"detection","stage_index":3,"stage_total":7,"progress":28,
   "created_at":"…","started_at":"…","finished_at":null,"error":"",
-  "summary":{"total":4,"priority_attention":2,"by_type":{…},"by_severity":{…},"avg_confidence":0.915,"text":"4 anomalies detected · 2 require priority attention"} }
+  "summary":{"total":4,"priority_attention":2,"by_type":{…},"by_severity":{…},"avg_confidence":0.915,"text":"4 anomalías detectadas · 2 requieren atención prioritaria"} }
 // DashboardDTO
 { "meters_total":12,"total_kwh":…,"anomalies_total":4,"high_priority":2,"aggregate_confidence":0.915,
   "status_breakdown":{"ok":9,"alert":2,"critical":1},  // M-106 (FP) counts as ok

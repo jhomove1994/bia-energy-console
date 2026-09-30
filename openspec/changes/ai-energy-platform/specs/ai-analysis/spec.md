@@ -98,19 +98,19 @@ At startup, any analysis left `pending` or `running` MUST be marked `failed` wit
 
 ### Requirement: Summary text and priority attention
 
-The summary text MUST read `"{N} anomalies detected · {P} require priority attention"`, where N counts all anomalies including FALSE_POSITIVE and P counts anomalies with HIGH severity and type REAL_ANOMALY or DATA_QUALITY.
+The summary text MUST be in Spanish and read `"{N} anomalías detectadas · {P} requieren atención prioritaria"` (singular forms `1 anomalía detectada` and `1 requiere atención prioritaria`), where N counts all anomalies including FALSE_POSITIVE and P counts anomalies with HIGH severity and type REAL_ANOMALY or DATA_QUALITY.
 
 #### Scenario: Demo summary
 
 - GIVEN the demo analysis completed
 - WHEN the summary is read
-- THEN the text is exactly `4 anomalies detected · 2 require priority attention`
+- THEN the text is exactly `4 anomalías detectadas · 2 requieren atención prioritaria`
 
 #### Scenario: No anomalies
 
 - GIVEN an analysis with zero anomalies
 - WHEN the summary is read
-- THEN the text is `0 anomalies detected · 0 require priority attention`
+- THEN the text is `0 anomalías detectadas · 0 requieren atención prioritaria`
 
 ### Requirement: Anomaly list
 
@@ -153,7 +153,7 @@ The summary text MUST read `"{N} anomalies detected · {P} require priority atte
 
 ### Requirement: Template explainer
 
-`reason` and `recommended_action` MUST be rendered by an `Explainer` port whose only shipped adapter is deterministic and template-based, building text from the anomaly's evidence. The system MUST NOT call any external AI service or require an API key.
+`reason` and `recommended_action` MUST be rendered by an `Explainer` port whose only shipped adapter is deterministic and template-based, building text from the anomaly's evidence. The text MUST be neutral, professional Spanish with Colombian number formatting (decimal comma, dot as thousands separator, for example `2.180,5 kWh` and `+103,7%`) and UTC timestamps such as `12 sept 2026, 14:00 UTC`. The system MUST NOT call any external AI service or require an API key.
 
 #### Scenario: Reason cites evidence
 

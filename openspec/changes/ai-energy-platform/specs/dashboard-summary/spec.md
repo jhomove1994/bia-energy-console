@@ -23,7 +23,7 @@ Provide the KPIs shown on the dashboard from a single authenticated endpoint.
 - GIVEN the demo analysis completed
 - WHEN the client calls the endpoint
 - THEN `anomalies_count` is 4 and `high_priority_count` is 2
-- AND `summary_text` is `4 anomalies detected · 2 require priority attention`
+- AND `summary_text` is `4 anomalías detectadas · 2 requieren atención prioritaria`
 - AND `last_analysis` references that analysis
 
 ### Requirement: Aggregate confidence

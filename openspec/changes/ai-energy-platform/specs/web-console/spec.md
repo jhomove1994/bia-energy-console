@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A React + TypeScript SaaS console that lets an evaluator complete Login -> Dashboard -> Meters -> M-109 -> Run AI Analysis -> Anomalies -> Investigation -> Action in 5-10 minutes. Meters are identified by `meter_id` only.
+A React + TypeScript SaaS console that lets an evaluator complete Login -> Dashboard -> Meters -> M-109 -> Run AI Analysis -> Anomalies -> Investigation -> Action (the UI names these Iniciar sesión, Dashboard, Medidores, M-109, Ejecutar análisis IA, Anomalías IA, Investigar and Acción recomendada) in 5-10 minutes. Meters are identified by `meter_id` only.
 
 ## Requirements
 
@@ -36,7 +36,7 @@ The dashboard MUST show meters, total kWh, anomalies, high-priority count, aggre
 
 - GIVEN the demo analysis completed
 - WHEN the user opens the dashboard
-- THEN it shows `4 anomalies detected · 2 require priority attention`
+- THEN it shows `4 anomalías detectadas · 2 requieren atención prioritaria`
 
 #### Scenario: Before analysis
 
@@ -57,7 +57,7 @@ The console MUST list meters with id, total kWh, daily variation and status badg
 #### Scenario: Filter and sort
 
 - GIVEN a completed demo analysis
-- WHEN the user filters by `Critical`
+- WHEN the user filters by status `Crítico` (API value `Critical`)
 - THEN only M-109 is listed
 - AND sorting by daily variation reorders the list
 
@@ -141,3 +141,27 @@ Every data view MUST show loading, error (with retry) and empty states rather th
 - GIVEN the API returns a network error
 - WHEN a view loads
 - THEN an error message with Retry is shown
+
+### Requirement: Spanish user-facing copy
+
+Everything the console displays MUST be in neutral, professional Spanish (no regional slang, no voseo; impersonal or "usted" forms), including page titles, navigation, buttons, form labels, validation and error messages, empty and 404 states, tooltips, `aria-label` values and the visually hidden chart summaries. The document language MUST be `es`. Code, identifiers, API field names, enum values, action codes, documentation and OpenSpec artifacts remain in English. Displayed enums MUST be mapped from the unchanged API values through one label module (types Anomalía real, Anomalía explicable, Falso positivo, Calidad de datos; severities Alta, Media, Baja; meter statuses Normal, Alerta, Crítico; analysis statuses Pendiente, En ejecución, Completado, Fallido; the seven stage names Lecturas, Baseline, Detección, Correlación, Eventos, Explicación, Recomendación; event types Cambio operativo, Parada programada, Calidad de datos, Desconocido). Numbers MUST use Spanish (Colombia) formatting (decimal comma, dot as thousands separator) and dates MUST read like `12 sept 2026, 14:00 UTC`.
+
+#### Scenario: Spanish login and navigation
+
+- GIVEN the user opens the console
+- WHEN the login page and the sidebar are shown
+- THEN the button reads `Iniciar sesión` and the navigation reads `Dashboard`, `Medidores` and `Anomalías IA`
+
+#### Scenario: Enum values are translated, API values are not
+
+- GIVEN an anomaly with type `REAL_ANOMALY`, severity `HIGH` and a meter with status `Critical`
+- WHEN the console renders them
+- THEN it shows `Anomalía real`, `Alta` and `Crítico`
+- AND the API payloads keep their English values
+
+#### Scenario: Spanish number and date formats
+
+- GIVEN a total of 12345.678 kWh and the instant 2026-09-12T14:05:00Z
+- WHEN the console formats them
+- THEN it shows `12.345,7 kWh` and `12 sept 2026, 14:05 UTC`
+

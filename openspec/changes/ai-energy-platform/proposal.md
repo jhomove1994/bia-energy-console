@@ -22,7 +22,7 @@ Success means an evaluator can follow Login -> Dashboard -> Meters -> M-109 -> R
 - The M-109 event record exists but its type is `UNKNOWN`, so it has zero explanatory power.
 - The dataset has no gaps and `status=OK` on every row. The gap and status detectors must exist, but they produce nothing here.
 - The brief's example figures (M-109 +103.7%, baseline 1,070) are illustrative. Our numbers come from the data (about +109%).
-- "4 anomalies detected · 2 require priority attention" counts all four findings, including the FALSE_POSITIVE. Priority attention = HIGH severity AND type in {REAL, DATA_QUALITY}.
+- "4 anomalías detectadas · 2 requieren atención prioritaria" counts all four findings, including the FALSE_POSITIVE. Priority attention = HIGH severity AND type in {REAL, DATA_QUALITY}.
 
 ## Scope
 
@@ -209,12 +209,13 @@ The change is greenfield and each slice is an independent PR. Revert the offendi
 4. Delivery: `ask-on-risk` with chain strategy `stacked-to-main`. The base branch is `main`. Create a baseline commit on `main` (`.gitignore`, `docs/`, `openspec/`) before slice 1.
 5. Meter name/location: not stored or synthesized. The UI shows `meter_id`.
 6. Per-stage delay: `ANALYSIS_STAGE_DELAY_MS`, default 300 for the demo and 0 in tests, so the pending/running/done progress stays visible.
+7. User-facing copy in Spanish (brief examples are Spanish); code/API/docs in English.
 
 ## Success Criteria
 
 - [ ] `docker-compose up` serves the UI and API with no API keys. The data is seeded from CSV at startup.
 - [ ] Analysis yields exactly: M-109 REAL/HIGH (priority 1), M-112 DATA_QUALITY/HIGH, M-104 EXPLAINABLE/MEDIUM, M-106 FALSE_POSITIVE/LOW. The 8 healthy meters produce no findings.
-- [ ] The summary reads "4 anomalies detected · 2 require priority attention".
+- [ ] The summary reads "4 anomalías detectadas · 2 requieren atención prioritaria".
 - [ ] No meter_id literal or expected result appears in engine code (checked by grep in review).
 - [ ] Every anomaly exposes numeric evidence, a reason and a recommended action. The UI shows them in Investigation.
 - [ ] The analysis progresses pending -> running -> done with visible stage progress.

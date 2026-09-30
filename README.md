@@ -8,17 +8,17 @@ A web console that watches 12 smart meters, runs an anomaly analysis on demand a
 docker compose up --build
 ```
 
-Open <http://localhost:8080> and sign in with **`admin` / `admin123`**. No `.env` file and no API key are needed. The first build takes a few minutes.
+Open <http://localhost:8080> and sign in with **`admin` / `admin123`**. No `.env` file and no API key are needed. The first build takes a few minutes. The interface is in Spanish (the brief's examples are Spanish); code, API, docs and commits stay in English.
 
 **Demo flow (5 to 10 minutes)**
 
-1. **Login** with the demo credentials.
+1. **Iniciar sesión** with the demo credentials.
 2. **Dashboard**: 12 meters, total kWh, status breakdown, no anomalies yet.
-3. **Meters**: type `109` in the search box, open **M-109**. Its kWh chart rises from 2026-09-12 14:00.
-4. Click **Run AI Analysis**. Seven stages show live progress, then a link to the results.
-5. **AI Anomalies**: `4 anomalies detected · 2 require priority attention`, ordered M-109, M-112, M-104, M-106.
-6. **Investigation** (click M-109): type, severity, confidence, evidence table, affected window and related event.
-7. **Recommended action**: the action card at the bottom of the investigation page.
+3. **Medidores**: type `109` in the search box, open **M-109**. Its kWh chart rises from 2026-09-12 14:00.
+4. Click **Ejecutar análisis IA**. Seven stages (Lecturas, Baseline, Detección, Correlación, Eventos, Explicación, Recomendación) show live progress, then a **Ver anomalías** link.
+5. **Anomalías IA**: `4 anomalías detectadas · 2 requieren atención prioritaria`, ordered M-109, M-112, M-104, M-106.
+6. **Investigar** (click M-109): type, severity, confidence, evidence table, affected window and related event.
+7. **Acción recomendada**: the action card at the bottom of the investigation page.
 
 Reset the data with `docker compose down -v`. Restarting without `-v` keeps the database and past analyses.
 
@@ -221,7 +221,7 @@ Run with `cd backend && go test ./internal/engine -run Dataset -count=1`.
 | 3 | M-104 | `EXPLAINABLE_ANOMALY` | MEDIUM (49.0) | 0.843 | 33.7 |
 | 4 | M-106 | `FALSE_POSITIVE` | LOW (34.7) | 0.858 | 5.7 |
 
-Summary: `4 anomalies detected · 2 require priority attention`.
+Summary: `4 anomalías detectadas · 2 requieren atención prioritaria`.
 
 | Check | Test |
 |-------|------|
