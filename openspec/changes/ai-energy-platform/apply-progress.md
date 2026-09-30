@@ -484,7 +484,7 @@ Completed tasks: 9.1 - 9.11 (125/125 overall). Branch `feat/09-delivery` (base `
 | 104f2cc | fix(explain): render power factor and ratio with two decimals |
 | b5f2166 | feat(delivery): add Dockerfiles, nginx config and zero-config compose stack |
 | 72be469 | docs: add README with architecture, threshold derivation and validation results |
-| (this commit) | docs(openspec): mark slice 9 complete and record apply progress |
+| 83c25a0 | docs(openspec): mark slice 9 complete and record apply progress |
 
 ### TDD Cycle Evidence (explainer fix)
 | Task | Test file | RED (observed) | GREEN | REFACTOR |
