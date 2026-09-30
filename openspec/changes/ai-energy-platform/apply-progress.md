@@ -261,5 +261,55 @@ Summary text: `4 anomalies detected · 2 require priority attention` (computed i
 - Spec scenario "Override a threshold" on the full dataset: with `HourlyDevPct` 0.60 M-104 is still reported (its +47% day is an orphan daily-variation incident promoted by design 2.5, since `DailyVarPct` is 0.25), split into three incidents. The synthetic test proves the hourly gate itself; see risks in the return summary.
 - Size: slice 4b adds about 2,000 lines across 12 files (about 1,050 in tests, 190 in docs) in 7 commits. `size:exception` accepted for all PRs.
 
+## Batch 6: Slice 5 (complete)
+
+Completed tasks: 5.1 - 5.14 (81/125 overall).
+
+### Slice 5 (branch `feat/05-analysis-jobs-api`, base `feat/04b-engine-score-dataset`)
+
+Commits (work units):
+| Hash | Message |
+|------|---------|
+| 1216e85 | docs(openspec): clarify threshold override scenario per detector (spec wording fix + `docs/thresholds.md` note) |
+| 9681eb3 | feat(platform): generate v4 ids and declare analysis and anomaly ports (5.1, 5.2) |
+| 194dd70 | feat(sqlite): persist analyses and anomalies with atomic completion (5.3, 5.4) |
+| 24b3eb7 | feat(app): summarize anomalies with priority attention and headline text (5.5, 5.6) |
+| ad3204e | feat(app): run analyses as a single-flight background job with staged progress (5.7, 5.8) |
+| ffadeda | feat(app): derive meter status from the latest done analysis (5.9, 5.10) |
+| a3d4488 | feat(app): serve anomaly list and detail from the latest done analysis (5.11, 5.12) |
+| 30eb947 | feat(http): expose analysis jobs and anomalies endpoints (5.11, 5.12) |
+| 4c3df39 | feat(api): recover interrupted analyses at boot and wire the analysis stack (5.13) |
+
+### TDD Cycle Evidence (slice 5)
+| Task | Test file | RED (observed) | GREEN | TRIANGULATE | REFACTOR |
+|------|-----------|----------------|-------|-------------|----------|
+| 5.1/5.2 uuid | `platform/uuid_test.go` | `undefined: NewID, UUIDGenerator` build failure | ok | v4 format x50, 1,000 unique, generator port | none |
+| 5.3/5.4 stores | `sqlite/analyses_test.go` | `undefined: AnomalyStore, NewAnalysisStore` build failure | ok | lifecycle + started_at stability, atomic Complete (FK failure on second anomaly leaves analysis running and zero anomalies), Fail, ErrNotFound, Latest vs LatestDone with failed/running, FailInterrupted (2 of 4 rows, idempotent), rank order and 4 filters, evidence and event round trip | gofmt |
+| 5.5/5.6 summary | `app/summary_test.go` | `undefined: Summarize` | ok | demo shape, zero, singular forms, FALSE_POSITIVE only in total, HIGH EXPLAINABLE not priority, by-type/severity, mean 0.75 | none |
+| 5.7/5.8 runner | `app/analysis_service_test.go` | `undefined: AnalysisService` build failure | ok on the first run; `go test -race ./internal/app/...` clean | 8 concurrent Starts share one id and one row, new id after done, retry after engine error and after panic, 7 stages with progress 0,14,28,42,57,71,85 then 100, done only at 100, results visible only at Complete, explainer + summary persisted, real engine finds the shifted meter, readings error fails, 25 ms delay shows at least two stages | none |
+| 5.9/5.10 status | `app/meter_status_test.go`, `dashboard_service_test.go` | `undefined: DeriveStatuses` | ok | 8 derivation cases (Critical only for REAL HIGH; DQ/EXPLAINABLE HIGH stay Alert; FP only stays OK), per-meter grouping, latest-done source, repository error, mean confidence 0.75, failed newer run keeps A, newer done C replaces | none |
+| 5.11/5.12 service | `app/anomaly_service_test.go` | `undefined: AnomalyService` | ok | default latest done, none yet (empty non-nil), explicit id, 3 filters, failed run exposes nothing, unknown analysis and bad filters, Get | none |
+| 5.11/5.12 HTTP | `adapters/http/analysis_http_test.go` | `unknown field Analysis in struct literal of type Deps` build failure; first GREEN run failed on my own assertions (unit expected on `electrical_ratio` evidence; a run left in flight closed the DB) and both were fixed in the test | ok | demo dataset from `data/*.csv`: 202 `{id}` exact body, repeat while active same id, progress monotonic with at least two stages, nothing visible before done, new id after done, done payload, 404, 204, empty list before analysis, 4 ranked rows, 3 filters, 404/400s, detail with evidence and UNKNOWN event, meters Critical/Alert/OK, dashboard, five routes 401 | none |
+| 5.13 boot | `cmd/api/main_test.go` | `stuck-pending after boot = ... Status:pending ... want failed/interrupted` | ok | pending and running rows both failed, log line, new run reaches done | none |
+| 5.14 verify | n/a | n/a | vet clean, gofmt empty, all 9 packages ok, race clean on `internal/app`, no `M-\d+` in non-test backend code | n/a | done |
+
+### Work Unit Evidence (slice 5)
+| Evidence | Value |
+|---|---|
+| Focused test command | `cd backend && go test ./... -count=1`: ok for 9 packages; `go test -race ./internal/app/... -count=1`: ok |
+| Runtime harness | Built binary, `DATA_DIR=../data`, temp DB, `ANALYSIS_STAGE_DELAY_MS=300`, `PORT=18085`: login (87-char token); `POST /api/ai/analyze` 202 id `7a4f...`; second POST 202 with the same id; polling showed running readings 1/0, baseline 2/14, detection 3/28, correlation 4/42, events 5/57, explanation 6/71, then done recommendation 7/100 (empty error); `GET /api/anomalies` summary `4 anomalies detected · 2 require priority attention`, ranks 1-4 M-109 REAL HIGH, M-112 DATA_QUALITY HIGH, M-104 EXPLAINABLE MEDIUM, M-106 FALSE_POSITIVE LOW; M-109 detail evidence metrics consumption_kwh, daily_kwh, current_a, power_factor, voltage_v, electrical_ratio, duration_hours, hourly_pattern, event with reason (92.8 vs 44.1 kWh/h, +110.5%), action and UNKNOWN related event; meters M-109 Critical, M-104 and M-112 Alert, 9 OK; dashboard 12 meters, 4 anomalies, 2 high, aggregate confidence 0.914, last analysis done; graceful shutdown |
+| Rollback boundary | `backend/internal/{platform/uuid.go,app/{analysis_service,anomaly_service,summary}.go,adapters/sqlite/{analyses,anomalies}.go,adapters/http/{handlers_analysis,handlers_anomalies}.go}`, the `AnalysisStatuses` block in `app/meter_service.go`, the new ports in `app/ports.go`, router `Deps`, `cmd/api/main.go` wiring and boot recovery |
+
+### Deviations / notes (slice 5)
+- Spec wording fix applied (commit 1216e85): the "Override a threshold" scenario now states that raising `HourlyDevPct` only changes the hourly detector and every threshold is overridable independently; `docs/thresholds.md` carries the same note. No engine code changed.
+- Added `app/anomaly_service.go` (`AnomalyService`, `AnomalyQuery`, `AnomalyList`) so the list defaults, filter validation and 404 rules live in the app layer instead of the handlers (not named in the tasks). It exposes anomalies only for `done` analyses.
+- The `explanation` and `recommendation` stages are progress markers driven by the engine hook; the Explainer runs after `engine.Analyze` returns (it needs the scored anomaly and its action code) and before the single `Complete` transaction. The `readings` stage belongs to the runner.
+- `AnalysisService` options: `WithStageDelay`, `WithClock`, `WithAnalyzer` (test seam for engine errors, panics and pauses; the default wraps `engine.Analyze`), `WithLogger`. The single-flight slot is released under the same lock as the terminal write, so a client that sees `done` can start the next run at once.
+- `NoAnalysis` and `NoLatestDone` stay in the code for tests and fixtures; `main` wires the repository-backed sources (`NewAnalysisStatuses`, the analysis store as `LatestDoneSource`).
+- API shape follows the specs: analyze returns exactly `{id}`; analysis has `stage_index`, `stage_total` (7) and a `summary` (`total`, `priority_attention`, `meters_analyzed`, `by_type`, `by_severity`, `avg_confidence`, `text`) only when done; anomalies carry `priority_rank`, `confidence_label`, `anomaly` (kind label), nullable `related_event` (id, timestamp, type, description; no `explanatory_power`) and `evidence[]`. `GET /api/anomalies` returns `analysis_id` and `summary_text` as null when no analysis is done. `router.Deps.Engine` (optional) supplies the confidence label bands.
+- `AvgConfidence` is rounded to three decimals (demo 0.914).
+- `started_at` is stamped by the store on the first `running` update (the port carries no timestamp), using an injectable clock defaulting to `time.Now`.
+- Size: 23 files, 2,717 additions and 6 deletions in 9 commits (about 1,500 in tests). `size:exception` accepted for all PRs.
+
 ## Remaining
-Slices 5 - 9 (58 tasks) not started. Next: 5.1 onward (analysis jobs, summary, anomalies API, status derivation).
+Slices 6 - 9 (44 tasks) not started. Next: 6.1 onward (web shell, login, dashboard).
