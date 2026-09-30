@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { AppShell } from './AppShell'
+import { routerFuture } from '../../app/router'
 
 const nav = [
   { to: '/', label: 'Dashboard', end: true },
@@ -10,7 +11,7 @@ const nav = [
 
 function renderShell(path = '/', onLogout = vi.fn()) {
   render(
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter future={routerFuture} initialEntries={[path]}>
       <AppShell navItems={nav} username="admin" onLogout={onLogout}>
         <p>page content</p>
       </AppShell>
