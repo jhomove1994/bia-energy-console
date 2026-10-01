@@ -83,5 +83,5 @@ The build, tests and runtime MUST NOT read or depend on any expected-results fil
 #### Scenario: No expected results
 
 - GIVEN the repository
-- WHEN searched for `expected_results`
+- WHEN searched for references to an expected-results file
 - THEN no code or configuration references it

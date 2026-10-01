@@ -39,7 +39,7 @@ Success means an evaluator can follow Login -> Dashboard -> Meters -> M-109 -> R
 - Streaming or real-time ingestion, CSV upload UI, multi-tenant.
 - ML model training, including Isolation Forest and forecasting.
 - Anomaly workflow beyond read-only status (no assignment or ticketing).
-- Any use of `expected_results.csv`.
+- Any use of the evaluator's reference results (not available to this project).
 - LLM integration. It would force evaluators to supply an API key, and the brief accepts rules and statistics. The `Explainer` port keeps it pluggable later.
 
 ## Capabilities
